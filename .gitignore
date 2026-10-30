@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+*.keystore
+*.jks
+build/
+.gradle/
+local.properties
+.DS_Store
+# TV backups, screenshots and ADB keys never go in the repo
+backup/
+shots/
+adbkey*
