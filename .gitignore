@@ -11,3 +11,6 @@ local.properties
 backup/
 shots/
 adbkey*
+# list feed signing key: lives in the secret store, never in the repo
+*.key.pem
+dist/

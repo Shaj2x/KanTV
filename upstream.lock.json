@@ -1,0 +1,5 @@
+{
+  "repo": "https://github.com/Gathin23/cleanyourtv",
+  "commit": "fe9ad3204b945d3aadfb6876ee6ea78c20a1fe73",
+  "note": "The upstream commit the guard port is verified against (npm run conformance) and the lists are built from (npm run lists:build). Bump it only after both pass."
+}
