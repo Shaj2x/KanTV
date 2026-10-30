@@ -1,0 +1,27 @@
+{
+  "_doc": "Hand-reviewed per-model decisions the feed builder cannot read reliably from upstream's prose. launcher: \"unsupported\" means KanTV offers the debloat only and never attempts the launcher install. \"os\" keys match a substring of tv.json's os field. Each entry cites the upstream header line it rests on; review again when upstream.lock.json is bumped.",
+  "models": {
+    "ffalcon-r34a0-cn": {
+      "launcher": "unsupported",
+      "source": "the launcher signature gate ... Conclusion: debloat only, stock CyberUI launcher stays"
+    },
+    "tcl-mt9655-cn-android14": {
+      "launcher": "unsupported",
+      "source": "Sideloading and the launcher: both are locked"
+    },
+    "tcl-q10g-pro": {
+      "launcher": "unsupported",
+      "source": "A third-party launcher cannot be installed here"
+    },
+    "tcl-ak30a5": {
+      "launcher": "unsupported",
+      "source": "APKs that declare android.intent.category.HOME are refused at parse time unless they are signed ... A third-party launcher therefore cannot be installed on this model at all"
+    }
+  },
+  "os": {
+    "Fire OS": {
+      "launcher": "unsupported",
+      "source": "FIRE OS: DEBLOAT ONLY. com.amazon.tv.launcher keeps Home (every Fire OS list, Amazon and Hisense-built)"
+    }
+  }
+}

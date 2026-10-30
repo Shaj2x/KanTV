@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upstream cleanyourtv at the pinned commit
+        run: |
+          commit=$(jq -r .commit upstream.lock.json)
+          git init -q ../cleanyourtv
+          git -C ../cleanyourtv fetch -q --depth 1 https://github.com/Gathin23/cleanyourtv "$commit"
+          git -C ../cleanyourtv checkout -q FETCH_HEAD
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Conformance with upstream's own scripts
+        run: npx tsx conformance/run.ts --random 300 --jobs 8
+      - name: The list feed builds
+        run: npx tsx scripts/lists/build.ts --dev-key --out /tmp/feed

@@ -2,6 +2,7 @@
 // signature over its exact bytes; the apps verify it with the public key they ship with, and check every list
 // again on the device (validateList), so a bad feed can never get a core package onto a TV.
 import type { ParsedList } from "./list.ts";
+import type { ModelMatch } from "./match.ts";
 
 export interface FeedList {
   /** e.g. "google-chromecast-gtv-4k/debloat.txt" */
@@ -17,12 +18,14 @@ export interface FeedList {
 
 export interface FeedModel {
   folder: string;
+  /** "unsupported": offer the debloat only (Fire OS, sets with a launcher signature gate). */
+  launcher: "supported" | "unsupported";
   tv: string;
   os: string;
   brand: string;
   notes: string;
-  /** Lower-case identifiers to match against the TV's getprop answers. */
-  match: string[];
+  /** What identifies the hardware, for matchModels(). */
+  match: ModelMatch;
   lists: FeedList[];
 }
 
