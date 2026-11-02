@@ -1,7 +1,7 @@
 // What the app needs from the phone it runs on. The native build (Android first, then iOS) implements these
 // with a TCP/TLS socket, the platform keystore and mDNS; the demo implements them with a simulated TV so the
 // screens can be tried in a browser. Everything above this line is shared core code.
-import type { Feed, PortProber, RecordStore, TvShell } from "@kantv/core";
+import type { Feed, LauncherConfig, PortProber, RecordStore, ThemeSpec, TvShell } from "@kantv/core";
 
 export interface FoundTv {
   id: string;
@@ -32,6 +32,54 @@ export interface RemoteKeys {
   close(): void;
 }
 
+export interface Entitlement {
+  entitled: boolean;
+  plan: "subscription" | "trial" | "none";
+  trialEndsAt: string | null;
+  subscriptionEndsAt: string | null;
+}
+
+export interface Design {
+  id: string;
+  name: string;
+  summary: string;
+  request: string;
+  spec: ThemeSpec;
+  /** What the checks changed to make it safe. */
+  fixes: string[];
+  createdAt: string;
+  /** Saved, but the trial is over: shown, not applicable. */
+  locked: boolean;
+}
+
+export type DesignFailure = "subscription-required" | "daily-limit" | "too-fast" | "busy" | "design-refused" | "design-invalid" | "design-truncated" | "offline";
+
+/** The AI designer and the account, through KanTV's backend (the model key never leaves the server). */
+export interface Designer {
+  /** True when designs come from the real AI designer, false for the preview's samples. */
+  live: boolean;
+  entitlement(): Promise<Entitlement>;
+  design(request: string, installedApps: { package: string; label: string }[], exact: boolean): Promise<Design | DesignFailure>;
+  regenerate(id: string, installedApps: { package: string; label: string }[]): Promise<Design | DesignFailure>;
+  list(): Promise<Design[]>;
+  /** The launcher config for this design, and the TV pass that lets the launcher show it. */
+  apply(id: string, household: string, instance: string): Promise<{ config: LauncherConfig; lease: string; expiresAt: string } | DesignFailure>;
+}
+
+export interface Plan {
+  id: "monthly" | "yearly";
+  /** As the store shows it, in the user's currency. */
+  price: string;
+  perMonth: string;
+  note?: string;
+}
+
+export interface Purchases {
+  plans(): Promise<Plan[]>;
+  buy(id: Plan["id"]): Promise<"bought" | "cancelled" | "failed">;
+  restore(): Promise<boolean>;
+}
+
 export interface Platform {
   mode: "native" | "demo";
   /** Finds Android TVs on this Wi-Fi; calls back as they turn up. */
@@ -45,4 +93,6 @@ export interface Platform {
   remote(tv: FoundTv, askCode: () => Promise<string>): Promise<RemoteKeys>;
   /** Seconds to wait so the TV writes package state to disk before a reboot (upstream: about 15 s). */
   settleDelayMs: number;
+  designer: Designer;
+  purchases: Purchases;
 }

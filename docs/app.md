@@ -16,6 +16,9 @@ upstream.
 | Setup 5 | Switch debugging off and prove it (only a refused connection counts), then revoke the authorisation on the TV |
 | Remote | D-pad, OK, Back, Home, power, volume, typing; pairs with the code the TV shows |
 | Restore | Debugging back on, replay the restore point, switch debugging off again |
+| Design | Describe a look, see it on a TV-shaped preview, try another take, put it on the TV; "Exactly as I describe" |
+| My designs | Every design made; after the trial they stay, marked locked |
+| Paywall | Monthly (pre-selected) and yearly; says the designs are kept and that Restore is always free |
 
 ## Native and demo
 

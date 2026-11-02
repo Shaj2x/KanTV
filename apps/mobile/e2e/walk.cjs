@@ -49,6 +49,29 @@ const server = http.createServer((req, res) => {
     await page.goBack(); await tap("Restore my TV"); await see("Start restore"); await shot("restore-intro");
     await tap("Start restore"); await see("Allow USB debugging?"); await tap("Preview: tap Allow on the TV");
     await see("back to how it was", 20000); await shot("restore-done");
+    await tap("Switch debugging off again"); await see("All done, and locked up", 20000);
+    await tap("Go to my TV"); await see("Free trial");
+    await tap("Design your home screen"); await see("Design your home screen"); await shot("design-empty");
+    await tap("Like a cosy cabin in the woods"); await tap("Design it"); await see("Try another take", 15000); await shot("design-result", 1500);
+    const first = await page.getByText(/^(Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
+    await tap("Try another take"); await page.waitForTimeout(1600);
+    const second = await page.getByText(/^(Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
+    if (first === second) throw new Error(`another take gave the same design (${first})`);
+    await shot("design-another", 1500);
+    await tap("Put it on my TV"); await see("ready to send"); await shot("design-applied", 1700);
+    await tap("My designs"); await see("2 saved"); await shot("saved", 1500);
+    await page.goBack(); await page.goBack(); await see("Free trial");
+    await tap("Preview: end the free trial"); await see("Free trial over");
+    await tap("Design your home screen"); await see("Your free week is over"); await shot("design-after-trial");
+    await tap("My designs"); await see("Your designs are safe"); await shot("saved-locked", 1500);
+    await tap("See plans"); await see("Keep your TV looking yours"); await shot("paywall");
+    await tap("Subscribe monthly"); await see("Your designs are safe", 15000).catch(() => {});
+    await page.waitForTimeout(800);
+    if (await page.getByText("LOCKED").filter({ visible: true }).count()) {
+      await page.goBack(); await page.waitForTimeout(400);
+    }
+    await page.goBack(); await page.goBack(); await see("Subscribed"); await shot("home-subscribed");
+
     console.log("FLOW OK", btn);
   } catch (e) {
     console.log("FLOW FAILED at step", n, String(e).split("\n")[0]);
@@ -57,5 +80,5 @@ const server = http.createServer((req, res) => {
   }
   console.log("console errors:", errors.length ? errors.join("\n") : "none");
   await browser.close(); server.close();
-  if (process.exitCode === undefined && (errors.length || n < 18)) process.exitCode = 1;
+  if (process.exitCode === undefined && (errors.length || n < 25)) process.exitCode = 1;
 });

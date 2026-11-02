@@ -4,6 +4,7 @@ import { runDebloat } from "@kantv/core";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
+import { dockableApps } from "../../src/apps";
 import { friendlyName } from "../../src/labels";
 import { platform } from "../../src/platform";
 import { useSession } from "../../src/session";
@@ -36,6 +37,10 @@ export default function Run() {
           },
         });
         if (!result.ok) throw new Error("the list was refused");
+        // Which dock-worthy apps this TV has, for the designer later.
+        const apps = await session.connection!.shell.run("pm list packages -e --user 0");
+        const installedApps = apps.ok ? dockableApps(apps.out.split("\n").map((l) => l.replace(/^package:/, "").trim())) : undefined;
+        set({ installedApps });
         setStage("verify");
         await new Promise((r) => setTimeout(r, 400));
         setStage("settle");

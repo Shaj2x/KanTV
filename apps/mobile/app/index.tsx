@@ -1,6 +1,9 @@
 // Home: set up a TV, or, once one is set up, the remote and Restore. Restore is always here and always free.
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { platform, type Entitlement } from "../src/platform";
+import { demoEndTrial } from "../src/platform/demo/designs";
 import { useSession } from "../src/session";
 import { color, radius, space, type } from "../src/theme";
 import { Icon, type IconName } from "../src/ui/Icon";
@@ -21,9 +24,26 @@ function Tile({ icon, title, detail, onPress, soon }: { icon: IconName; title: s
   );
 }
 
+function trialLine(e: Entitlement | null): string | null {
+  if (!e) return null;
+  if (e.plan === "subscription") return "Subscribed";
+  if (e.plan === "trial" && e.trialEndsAt) {
+    const days = Math.max(1, Math.ceil((new Date(e.trialEndsAt).getTime() - Date.now()) / 86_400_000));
+    return `Free trial · ${days} day${days === 1 ? "" : "s"} left`;
+  }
+  return "Free trial over";
+}
+
 export default function Home() {
   const { s: session } = useSession();
   const done = session.result;
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      void platform.designer.entitlement().then(setEnt);
+    }, []),
+  );
+  const line = trialLine(ent);
   return (
     <Screen back={false}>
       <View style={{ gap: space(1), marginTop: space(2) }}>
@@ -48,9 +68,13 @@ export default function Home() {
 
       <View style={{ gap: space(3) }}>
         <Tile icon="remote" title="Remote" detail="D-pad, volume and typing from your phone" onPress={() => router.push("/remote")} />
-        <Tile icon="sparkle" title="Design your home screen" detail="Describe the look you want; AI builds it" soon />
+        <Tile icon="sparkle" title="Design your home screen" detail="Describe the look you want; AI builds it" onPress={() => router.push("/design")} />
         <Tile icon="restore" title="Restore my TV" detail="Put everything back the way it was. Always free." onPress={() => router.push("/restore")} />
       </View>
+      {line ? <Text style={[type.small, { textAlign: "center" }]}>{line}</Text> : null}
+      {platform.mode === "demo" && ent?.entitled && ent.plan === "trial" ? (
+        <Button kind="ghost" label="Preview: end the free trial" onPress={() => (demoEndTrial(), void platform.designer.entitlement().then(setEnt))} />
+      ) : null}
     </Screen>
   );
 }

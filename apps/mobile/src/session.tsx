@@ -18,6 +18,8 @@ export interface Session {
   preview?: DisablePlan;
   result?: Extract<DebloatResult, { ok: true }>;
   closed?: "closed" | "open" | "unknown";
+  /** The TV's apps people put in a dock, read during setup, for the designer. */
+  installedApps?: { package: string; label: string }[];
 }
 
 const Ctx = createContext<{ s: Session; set: (patch: Partial<Session>) => void; reset: () => void } | null>(null);
