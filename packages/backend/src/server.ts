@@ -1,10 +1,16 @@
 // Production entry point. Configuration comes from the environment (secrets from the host's secret store):
 //   DATABASE_URL, KANTV_PEPPER, KANTV_LEASE_JWK (private EC P-256 JWK as JSON), AUTH_JWKS_URL, AUTH_ISSUER,
 //   AUTH_AUDIENCE, REVENUECAT_WEBHOOK_AUTH, PORT
+// The AI designer (optional; without it the design routes answer 503): ANTHROPIC_API_KEY, KANTV_THEME_MODEL
+//   (default claude-haiku-5-5), KANTV_THEME_EFFORT (low, medium, high; default low), KANTV_AI_DAILY_BUDGET_USD
+//   (default 50)
 import { serve } from "@hono/node-server";
 import { createApp, authFromEnv } from "./app.ts";
 import { migrate, postgresDb } from "./db.ts";
 import { leaseKeysFromJwk } from "./leases.ts";
+import Anthropic from "@anthropic-ai/sdk";
+import { DEFAULT_DESIGN_LIMITS } from "./app.ts";
+import { claudeThemeModel } from "./designer.ts";
 
 const required = ["DATABASE_URL", "KANTV_PEPPER", "KANTV_LEASE_JWK", "AUTH_JWKS_URL", "AUTH_ISSUER", "AUTH_AUDIENCE", "REVENUECAT_WEBHOOK_AUTH"];
 const missing = required.filter((k) => !process.env[k]);
@@ -26,5 +32,15 @@ const app = createApp({
   leaseKeys: await leaseKeysFromJwk(JSON.parse(process.env.KANTV_LEASE_JWK!)),
   auth: authFromEnv(process.env),
   revenueCatWebhookAuth: process.env.REVENUECAT_WEBHOOK_AUTH!,
+  designer: process.env.ANTHROPIC_API_KEY
+    ? {
+        model: claudeThemeModel(
+          new Anthropic(),
+          process.env.KANTV_THEME_MODEL ?? "claude-haiku-5-5",
+          (process.env.KANTV_THEME_EFFORT as "low" | "medium" | "high" | undefined) ?? "low",
+        ),
+        limits: { ...DEFAULT_DESIGN_LIMITS, dailyBudgetMicroUsd: Number(process.env.KANTV_AI_DAILY_BUDGET_USD ?? 50) * 1_000_000 },
+      }
+    : undefined,
 });
 serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 8080) }, (info) => console.log(`listening on ${info.port}`));
