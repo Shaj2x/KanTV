@@ -76,6 +76,9 @@ export function tvInputCheckCommand(names: string[]): string {
   );
 }
 
+/** Packages per input-driver command: about 2 KB, well under the 4 KB message limit of older TVs. */
+export const TVINPUT_CHUNK = 20;
+
 export const HANDLERS_QUERY =
   "cmd package query-activities --brief -a android.intent.action.VIEW -t vnd.android.cursor.item/channel 2>/dev/null; echo ==; " +
   "cmd package query-activities --brief -a android.settings.SETTINGS 2>/dev/null; true";
@@ -189,7 +192,16 @@ export async function planDisable(
   // Input-driver guard (#321): a package asking for TV_INPUT_HARDWARE is usually the layer under the HDMI,
   // AV and tuner inputs; disabled, the ports stay black until a full restore and a cold boot.
   if (pkgs.length && !options.tvInputAllow) {
-    const check = await shell.run(tvInputCheckCommand(pkgs));
+    // In groups, so each command fits the 4 KB an older TV accepts per ADB message; all or nothing, like the
+    // single command upstream sends.
+    const outputs: string[] = [];
+    let ok = true;
+    for (let i = 0; i < pkgs.length && ok; i += TVINPUT_CHUNK) {
+      const r = await shell.run(tvInputCheckCommand(pkgs.slice(i, i + TVINPUT_CHUNK)));
+      ok = r.ok;
+      outputs.push(r.out);
+    }
+    const check = { ok, out: outputs.join("\n") };
     if (check.ok) {
       const lines = linesOf(check.out).map((l) => l.trim()).filter(Boolean);
       for (const l of lines) if (l.startsWith("HUNG ")) skip(l.slice(5), "tvinput-hung");

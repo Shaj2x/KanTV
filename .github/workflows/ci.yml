@@ -20,6 +20,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Reference ADB client (adb-shell, as upstream uses) for the ADB tests
+        run: python3 -m venv testing/venv && testing/venv/bin/pip install -q -r testing/requirements.txt
+      - name: The fake adbd satisfies adb-shell
+        run: testing/venv/bin/python -m unittest testing/fake-tv/test_adbd.py
       - run: npm run typecheck
       - run: npm test
       - name: Conformance with upstream's own scripts

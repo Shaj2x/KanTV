@@ -15,6 +15,7 @@ Needs Node 22 and Python 3, and an upstream cleanyourtv checkout next to this re
 
 ```bash
 npm ci
+python3 -m venv testing/venv && testing/venv/bin/pip install -r testing/requirements.txt
 npm test                 # unit tests, and the list feed built from upstream
 npm run conformance      # upstream's own scripts vs the KanTV port, on the same fake TVs
 npm run lists:build -- --dev-key

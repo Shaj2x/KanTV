@@ -14,3 +14,5 @@ adbkey*
 # list feed signing key: lives in the secret store, never in the repo
 *.key.pem
 dist/
+testing/venv/
+__pycache__/
