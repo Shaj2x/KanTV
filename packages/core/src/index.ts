@@ -12,3 +12,4 @@ export * from "./adb/index.ts";
 export * from "./closing.ts";
 export * from "./identity.ts";
 export * from "./questions.ts";
+export * from "./remote/index.ts";
