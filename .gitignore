@@ -16,3 +16,5 @@ adbkey*
 dist/
 testing/venv/
 __pycache__/
+apps/mobile/dist/
+apps/mobile/.expo/

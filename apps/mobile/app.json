@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "KanTV",
+    "slug": "kantv",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "tv.kantv.app",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "KanTV finds and controls the TV on your Wi-Fi.",
+        "NSBonjourServices": [
+          "_adb-tls-connect._tcp",
+          "_adb-tls-pairing._tcp",
+          "_androidtvremote2._tcp"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0E12",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "tv.kantv.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "scheme": "kantv",
+    "backgroundColor": "#0D0E12"
+  }
+}

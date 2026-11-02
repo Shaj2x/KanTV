@@ -30,3 +30,13 @@ jobs:
         run: npx tsx conformance/run.ts --random 300 --jobs 8
       - name: The list feed builds
         run: npx tsx scripts/lists/build.ts --dev-key --out /tmp/feed
+      - name: The phone app typechecks and builds for the web
+        run: |
+          cd apps/mobile
+          npx tsc -p tsconfig.json
+          EXPO_OFFLINE=1 CI=1 npx expo export --platform web --output-dir dist
+      - name: Walk the whole app in a browser (demo TV)
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+          node apps/mobile/e2e/walk.cjs /tmp/shots

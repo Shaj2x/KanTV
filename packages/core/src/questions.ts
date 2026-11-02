@@ -49,15 +49,15 @@ export function questionsFor(model: FeedModel, list: FeedList): Question[] {
       id: "reenabled",
       kind: "notice",
       title: "Some apps come back after a restart",
-      body: "This TV switches a few apps back on every time it starts. That is the TV, not a failed cleanup; KanTV tells you which ones.",
+      body: "This TV switches a few apps back on every time it starts. That's the TV, not a failed cleanup, and it doesn't undo the rest.",
     });
   }
   if (f.has("remote-buttons")) {
     q.push({
       id: "remote-buttons",
       kind: "notice",
-      title: "Check your remote's app buttons afterwards",
-      body: "On this TV the old home screen also handled buttons like YouTube or Netflix. We'll ask you to press each one at the end.",
+      title: "Your remote's app buttons",
+      body: "On this TV the stock home screen also handles buttons like YouTube or Netflix. They keep working for now; when KanTV replaces the home screen, try each one.",
     });
   }
   return q;
