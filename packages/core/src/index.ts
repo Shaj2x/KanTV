@@ -9,3 +9,6 @@ export * from "./session.ts";
 export * from "./feed.ts";
 export * from "./match.ts";
 export * from "./adb/index.ts";
+export * from "./closing.ts";
+export * from "./identity.ts";
+export * from "./questions.ts";

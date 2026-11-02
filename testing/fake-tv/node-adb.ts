@@ -4,6 +4,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { createPrivateKey, generateKeyPairSync, privateEncrypt, constants, type KeyObject } from "node:crypto";
 import { existsSync, writeFileSync } from "node:fs";
 import { connect, type Socket } from "node:net";
+import { networkInterfaces } from "node:os";
+import type { PortProbe, PortProber } from "../../packages/core/src/closing.ts";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SHA1_DIGEST_INFO, type AdbKey } from "../../packages/core/src/adb/key.ts";
@@ -65,12 +67,13 @@ export interface FakeAdbd {
 export function startAdbd(
   statePath: string,
   keysPath: string,
-  o: { prompt?: "accept" | "reject" | "ignore"; version?: string; maxdata?: number } = {},
+  o: { prompt?: "accept" | "reject" | "ignore"; version?: string; maxdata?: number; host?: string } = {},
 ): Promise<FakeAdbd> {
   if (!existsSync(keysPath)) writeFileSync(keysPath, "");
   const args = [join(HERE, "adbd.py"), "--keys", keysPath, "--prompt", o.prompt ?? "accept"];
   if (o.version) args.push("--version", o.version);
   if (o.maxdata) args.push("--maxdata", String(o.maxdata));
+  if (o.host) args.push("--host", o.host);
   const child: ChildProcess = spawn(VENV_PYTHON, args, { env: { ...process.env, FAKE_TV_STATE: statePath }, stdio: ["ignore", "pipe", "inherit"] });
   return new Promise((resolve, reject) => {
     child.stdout!.once("data", (d: Buffer) => {
@@ -81,3 +84,21 @@ export function startAdbd(
     child.once("exit", (code) => reject(new Error(`adbd exited ${code}`)));
   });
 }
+
+/** This machine's own LAN address, so a port check is not against loopback (which never counts). */
+export function lanAddress(): string | undefined {
+  for (const list of Object.values(networkInterfaces())) for (const a of list ?? []) if (a.family === "IPv4" && !a.internal) return a.address;
+  return undefined;
+}
+
+/** The phone's port check, in Node: a refusal is the only "closed". */
+export const nodeProber: PortProber = {
+  probe: (host, port, timeoutMs) =>
+    new Promise((resolve) => {
+      const s = connect({ host, port });
+      const done = (r: PortProbe) => (s.destroy(), resolve(r));
+      s.setTimeout(timeoutMs, () => done("no-answer"));
+      s.once("connect", () => done("open"));
+      s.once("error", (e: NodeJS.ErrnoException) => done(e.code === "ECONNREFUSED" ? "refused" : "unreachable"));
+    }),
+};

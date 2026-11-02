@@ -122,6 +122,17 @@ export class AdbConnection {
    * and wait for the user to tap Allow on the TV.
    */
   static async connect(transport: ByteTransport, key: AdbKey, o: ConnectOptions): Promise<AdbConnection> {
+    try {
+      return await AdbConnection.handshake(transport, key, o);
+    } catch (e) {
+      transport.close();
+      if (e instanceof AdbError) throw e;
+      if (e instanceof AdbProtocolError) throw new AdbError("protocol", e.message);
+      throw new AdbError("closed", `could not talk to the TV (${String(e)})`);
+    }
+  }
+
+  private static async handshake(transport: ByteTransport, key: AdbKey, o: ConnectOptions): Promise<AdbConnection> {
     const reader = new MessageReader();
     const read = (timeout = o.timeoutMs) => AdbConnection.readMessage(transport, reader, timeout);
     await transport.write(encodeMessage(A_CNXN, A_VERSION, MAX_PAYLOAD, utf8("host::kantv\0")));
@@ -170,7 +181,9 @@ export class AdbConnection {
 
   private fail(e: unknown): never {
     if (e instanceof AdbError && (e.kind === "closed" || e.kind === "protocol")) this.dead = e;
-    if (e instanceof AdbProtocolError) this.dead = new AdbError("protocol", e.message);
+    else if (e instanceof AdbProtocolError) this.dead = new AdbError("protocol", e.message);
+    // Anything the transport itself throws (EPIPE, ECONNRESET: the TV dropped off) is a lost connection.
+    else if (!(e instanceof AdbError)) this.dead = new AdbError("closed", `the connection to the TV was lost (${String(e)})`);
     throw this.dead ?? e;
   }
 

@@ -137,6 +137,11 @@ class Adbd:
                                 break
                     send(CLSE, local, arg0)
                     await writer.drain()
+                    if str(self.state().get("settings", {}).get("adb_enabled", "1")) == "0":
+                        # Debugging switched off: adbd stops, and the port refuses from now on.
+                        self.server.close()
+                        writer.close()
+                        return
                 elif command in (OKAY, CLSE):
                     continue
                 else:
@@ -165,16 +170,22 @@ class Adbd:
 async def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=0)
+    p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--keys")
     p.add_argument("--prompt", choices=["accept", "reject", "ignore"], default="accept")
     p.add_argument("--version", default="0x01000001")
     p.add_argument("--maxdata", type=int, default=256 * 1024)
     args = p.parse_args()
     adbd = Adbd(args)
-    server = await asyncio.start_server(adbd.handle, "127.0.0.1", args.port)
+    server = await asyncio.start_server(adbd.handle, args.host, args.port)
+    adbd.server = server
     print(f"READY {server.sockets[0].getsockname()[1]}", flush=True)
-    async with server:
-        await server.serve_forever()
+    try:
+        async with server:
+            await server.serve_forever()
+    except asyncio.CancelledError:
+        pass
+    await asyncio.Event().wait()  # stay up, refusing, so the port check sees adbd gone
 
 
 if __name__ == "__main__":
