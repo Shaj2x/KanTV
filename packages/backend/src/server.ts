@@ -4,6 +4,7 @@
 // The AI designer (optional; without it the design routes answer 503): ANTHROPIC_API_KEY, KANTV_THEME_MODEL
 //   (default claude-haiku-5-5), KANTV_THEME_EFFORT (low, medium, high; default low), KANTV_AI_DAILY_BUDGET_USD
 //   (default 50)
+// The list feed (optional): KANTV_FEED_DIR, a folder holding feed.json and feed.json.sig
 import { serve } from "@hono/node-server";
 import { createApp, authFromEnv } from "./app.ts";
 import { migrate, postgresDb } from "./db.ts";
@@ -32,6 +33,7 @@ const app = createApp({
   leaseKeys: await leaseKeysFromJwk(JSON.parse(process.env.KANTV_LEASE_JWK!)),
   auth: authFromEnv(process.env),
   revenueCatWebhookAuth: process.env.REVENUECAT_WEBHOOK_AUTH!,
+  feedDir: process.env.KANTV_FEED_DIR,
   designer: process.env.ANTHROPIC_API_KEY
     ? {
         model: claudeThemeModel(

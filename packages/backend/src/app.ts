@@ -1,6 +1,8 @@
 // The HTTP API. Every route but the health check, the public lease key and the billing webhook needs the
 // identity provider's token. The API holds no model keys yet: the AI proxy arrives in Phase 2.
 import { timingSafeEqual } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Hono, type Context } from "hono";
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import { z } from "zod";
@@ -18,6 +20,8 @@ export interface Config {
   auth: { jwks: JWTVerifyGetKey; issuer: string; audience: string };
   /** The Authorization value RevenueCat is configured to send to the webhook. */
   revenueCatWebhookAuth: string;
+  /** Folder with feed.json and feed.json.sig from scripts/lists/build.ts; served to the apps, which verify it. */
+  feedDir?: string;
   /** The AI designer; without it the design routes answer 503. */
   designer?: { model: ThemeModel; limits: DesignLimits; random?: () => number };
   now?: () => Date;
@@ -83,6 +87,20 @@ export function createApp(cfg: Config) {
 
   app.get("/healthz", (c) => c.json({ ok: true }));
   app.get("/v1/lease-key", (c) => c.json({ keys: [cfg.leaseKeys.publicJwk] }));
+
+  // The signed debloat list feed. Public like the upstream lists it is built from; the apps check the signature
+  // with the key they ship with, so whoever serves it cannot change it.
+  for (const file of ["feed.json", "feed.json.sig"] as const) {
+    app.get(`/v1/lists/${file}`, async (c) => {
+      if (!cfg.feedDir) return c.json({ error: "no-feed" }, 503);
+      const body = await readFile(join(cfg.feedDir, file)).catch(() => null);
+      if (!body) return c.json({ error: "no-feed" }, 503);
+      return c.body(body, 200, {
+        "content-type": file.endsWith(".json") ? "application/json" : "application/octet-stream",
+        "cache-control": "public, max-age=3600",
+      });
+    });
+  }
 
   app.use("/v1/me/*", requireUser);
   app.use("/v1/me", requireUser);

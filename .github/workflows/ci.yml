@@ -40,3 +40,23 @@ jobs:
           npm i --no-save playwright
           npx playwright install --with-deps chromium
           node apps/mobile/e2e/walk.cjs /tmp/shots
+
+  backend-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upstream cleanyourtv at the pinned commit
+        run: |
+          commit=$(jq -r .commit upstream.lock.json)
+          git init -q ../cleanyourtv
+          git -C ../cleanyourtv fetch -q --depth 1 https://github.com/Gathin23/cleanyourtv "$commit"
+          git -C ../cleanyourtv checkout -q FETCH_HEAD
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/lists/build.ts --dev-key
+      - run: docker build -f packages/backend/Dockerfile -t kantv-backend .
+      - name: The production image against a real Postgres
+        run: npx tsx scripts/smoke-backend.ts

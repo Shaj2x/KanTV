@@ -1,0 +1,8 @@
+**/node_modules
+apps/mobile/dist
+apps/mobile/.expo
+dist
+testing/venv
+**/*.key.pem
+**/.env
+.git
