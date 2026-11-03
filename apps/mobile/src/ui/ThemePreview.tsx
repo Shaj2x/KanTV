@@ -1,10 +1,10 @@
 // A theme spec drawn as the TV's home screen, small: wallpaper, clock, top bar, focus glow, dock and grid. The
 // phone and the web studio both use it, so what the person approves is what the launcher shows (fonts are
 // close stand-ins until the bundled typefaces load).
-import type { ThemeSpec } from "@kantv/core";
-import { useId, useState, type ReactNode } from "react";
+import { wallpaperSvg, type ThemeSpec } from "@kantv/core";
+import { useId, useMemo, useState } from "react";
 import { Platform, Text, View, type LayoutChangeEvent } from "react-native";
-import Svg, { Circle, Defs, Ellipse, Line, LinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, SvgXml, Stop } from "react-native-svg";
 
 const BRANDS: Record<string, [string, string, string]> = {
   "com.netflix.ninja": ["Netflix", "#E50914", "N"],
@@ -35,38 +35,6 @@ export function fontFor(font: ThemeSpec["font"]) {
   if (font === "jetbrains-mono") return MONO;
   if (font === "bebas-neue") return NARROW;
   return SANS;
-}
-
-function Pattern({ spec, w, h }: { spec: ThemeSpec; w: number; h: number }) {
-  const wp = spec.wallpaper;
-  const ink = wp.colors[wp.colors.length - 1]!;
-  const out: ReactNode[] = [];
-  const step = w / 24;
-  if (wp.kind !== "pattern") return null;
-  if (wp.pattern === "dots" || wp.pattern === "grain")
-    for (let x = step / 2; x < w; x += wp.pattern === "grain" ? step / 2 : step)
-      for (let y = step / 2; y < h; y += wp.pattern === "grain" ? step / 2 : step)
-        out.push(<Circle key={`${x}-${y}`} cx={x} cy={y} r={wp.pattern === "grain" ? 0.6 : 1.4} fill={ink} opacity={0.7} />);
-  if (wp.pattern === "grid") {
-    for (let x = 0; x < w; x += step * 2) out.push(<Line key={`x${x}`} x1={x} y1={0} x2={x} y2={h} stroke={ink} strokeWidth={0.6} />);
-    for (let y = 0; y < h; y += step * 2) out.push(<Line key={`y${y}`} x1={0} y1={y} x2={w} y2={y} stroke={ink} strokeWidth={0.6} />);
-  }
-  if (wp.pattern === "stripes") for (let x = -h; x < w; x += step * 1.5) out.push(<Line key={x} x1={x} y1={h} x2={x + h} y2={0} stroke={ink} strokeWidth={step * 0.4} opacity={0.6} />);
-  if (wp.pattern === "waves")
-    for (let y = h * 0.15; y < h * 1.1; y += step * 1.4) {
-      let d = `M 0 ${y}`;
-      for (let x = 0; x <= w; x += step) d += ` Q ${x + step / 2} ${y + (Math.round(x / step) % 2 ? -step / 2 : step / 2)} ${x + step} ${y}`;
-      out.push(<Path key={y} d={d} stroke={ink} strokeWidth={1} fill="none" opacity={0.8} />);
-    }
-  if (wp.pattern === "topography") for (let i = 1; i < 9; i++) out.push(<Ellipse key={i} cx={w * 0.72} cy={h * 0.35} rx={i * step * 1.6} ry={i * step} stroke={ink} strokeWidth={0.8} fill="none" />);
-  if (wp.pattern === "stars")
-    for (let i = 0; i < 70; i++) {
-      const x = ((i * 9301 + 49297) % 233280) / 233280;
-      const y = ((i * 4567 + 1237) % 7919) / 7919;
-      out.push(<Circle key={i} cx={x * w} cy={y * h * 0.7} r={i % 7 === 0 ? 1.3 : 0.6} fill="#FFFFFF" opacity={0.75} />);
-    }
-  if (wp.pattern === "bokeh") for (let i = 0; i < 9; i++) out.push(<Circle key={i} cx={((i * 37) % 100) / 100 * w} cy={((i * 53) % 70) / 100 * h} r={step * (1 + (i % 3))} fill={ink} opacity={0.35} />);
-  return <>{out}</>;
 }
 
 function Tile({ app, u, spec, focused, showName, wide }: { app: [string, string, string]; u: number; spec: ThemeSpec; focused: boolean; showName: boolean; wide: number }) {
@@ -124,6 +92,7 @@ export function ThemePreview({ spec }: { spec: ThemeSpec }) {
   const align = { "top-left": "flex-start", "top-center": "center", "top-right": "flex-end" }[spec.clock.position] as "flex-start";
   const font = fontFor(spec.font);
   const glowY = l.style === "cinematic" ? 0.18 : 0.72;
+  const wallpaperXml = useMemo(() => (w > 0 ? wallpaperSvg(spec, Math.round(w), Math.round(h), id("wp")) : ""), [spec, w, h]);
 
   return (
     <View
@@ -134,12 +103,14 @@ export function ThemePreview({ spec }: { spec: ThemeSpec }) {
     >
       {w > 0 ? (
         <>
+          {/* The wallpaper the TV will get, from the same generator the backend renders it with. */}
+          <SvgXml xml={wallpaperXml} width={w} height={h} style={{ position: "absolute" }} />
           <Svg width={w} height={h} style={{ position: "absolute" }}>
             <Defs>
-              <LinearGradient id={id("wp")} x1="0" y1="0" x2="1" y2="1">
-                {(wp.kind === "sky" ? ["#0B1530", "#14254A", p.background] : wp.kind === "none" ? [p.background, p.background] : wp.colors).map((c, i, a) => (
-                  <Stop key={i} offset={i / (a.length - 1)} stopColor={c} />
-                ))}
+              <LinearGradient id={id("sky")} x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#0B1530" />
+                <Stop offset="0.5" stopColor="#14254A" />
+                <Stop offset="1" stopColor={p.background} />
               </LinearGradient>
               <RadialGradient id={id("glow")} cx="50%" cy={`${glowY * 100}%`} rx="45%" ry="40%">
                 <Stop offset="0" stopColor={p.accent} stopOpacity={0.38} />
@@ -150,8 +121,7 @@ export function ThemePreview({ spec }: { spec: ThemeSpec }) {
                 <Stop offset="0.6" stopColor={p.accent} stopOpacity={0} />
               </LinearGradient>
             </Defs>
-            <Rect x={0} y={0} width={w} height={h} fill={`url(#${id("wp")})`} />
-            <Pattern spec={spec} w={w} h={h} />
+            {wp.kind === "sky" ? <Rect x={0} y={0} width={w} height={h} fill={`url(#${id("sky")})`} /> : null}
             {l.style === "cinematic" ? <Rect x={0} y={0} width={w} height={h * 0.52} fill={apps[0]![1]} opacity={0.35} /> : null}
             {wp.dim ? <Rect x={0} y={0} width={w} height={h} fill="#000000" opacity={wp.dim / 100} /> : null}
             {l.glow === "radial" && l.style !== "minimal" ? <Rect x={0} y={0} width={w} height={h} fill={`url(#${id("glow")})`} /> : null}

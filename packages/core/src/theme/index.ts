@@ -3,3 +3,4 @@ export * from "./color.ts";
 export * from "./validate.ts";
 export * from "./compile.ts";
 export * from "./variety.ts";
+export * from "./wallpaper.ts";

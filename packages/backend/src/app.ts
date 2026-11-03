@@ -11,6 +11,7 @@ import { issueLease, type LeaseKeys } from "./leases.ts";
 import { accountFor, entitlementOf, registerTv } from "./trials.ts";
 import { checkTheme, compileTheme, type ThemeSpec } from "@kantv/core";
 import { DesignError, designTheme, type ThemeModel } from "./designer.ts";
+import { renderWallpaperJpeg } from "./wallpaper.ts";
 
 export interface Config {
   db: Db;
@@ -239,6 +240,17 @@ export function createApp(cfg: Config) {
     const checked = checkTheme(row.spec, null);
     if (!checked.ok) return c.json({ error: "design-invalid" }, 422);
     return c.json({ config: compileTheme(checked.spec!), ...lease });
+  });
+
+  // The wallpaper.jpg the phone pushes to the TV with the config from /apply.
+  app.get("/v1/me/designs/:id/wallpaper.jpg", async (c) => {
+    const account = await accountFor(cfg.db, c.get("sub"));
+    const [row] = await cfg.db.query<DesignRow>("select id, request, exact, spec, created_at from designs where id = $1 and account = $2", [c.req.param("id"), account.id]).catch(() => []);
+    if (!row) return c.json({ error: "not-found" }, 404);
+    if (!(await entitlementOf(cfg.db, account.id, now())).entitled) return c.json({ error: "subscription-required" }, 402);
+    const jpg = renderWallpaperJpeg(row.spec);
+    if (!jpg) return c.json({ error: "no-wallpaper" }, 404);
+    return c.body(new Uint8Array(jpg), 200, { "content-type": "image/jpeg", "cache-control": "private, max-age=86400" });
   });
 
   app.post("/v1/webhooks/revenuecat", async (c) => {

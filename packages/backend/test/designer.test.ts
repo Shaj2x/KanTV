@@ -230,6 +230,31 @@ describe("applying", () => {
   });
 });
 
+describe("the wallpaper image", () => {
+  it("renders the design's wallpaper for the TV, only for its owner and only while entitled", async () => {
+    const a = createApp({
+      db,
+      pepper: "p".repeat(32),
+      leaseKeys,
+      auth: { jwks, issuer: "i", audience: "kantv" },
+      revenueCatWebhookAuth: "Bearer x",
+      designer: { model: scripted([{ output: OCEAN }]), limits: { ...DEFAULT_DESIGN_LIMITS, minIntervalMs: 0 }, random: () => 0.5 },
+      now: () => clock,
+    });
+    const req = async (method: string, path: string, sub: string, body?: unknown) =>
+      a.request(path, { method, headers: { "content-type": "application/json", authorization: `Bearer ${await token(sub)}` }, body: body === undefined ? undefined : JSON.stringify(body) });
+    await req("POST", "/v1/me/tvs", "alice", { serial: h("alice"), model: "TV" });
+    const d = (await (await req("POST", "/v1/me/designs", "alice", ask("waves"))).json()) as any;
+    const img = await req("GET", `/v1/me/designs/${d.design.id}/wallpaper.jpg`, "alice");
+    expect(img.status).toBe(200);
+    expect(img.headers.get("content-type")).toBe("image/jpeg");
+    expect((await img.arrayBuffer()).byteLength).toBeGreaterThan(10_000);
+    expect((await req("GET", `/v1/me/designs/${d.design.id}/wallpaper.jpg`, "bob")).status).toBe(404);
+    clock = new Date(clock.getTime() + 8 * DAY);
+    expect((await req("GET", `/v1/me/designs/${d.design.id}/wallpaper.jpg`, "alice")).status).toBe(402);
+  });
+});
+
 describe("the Claude request", () => {
   it("asks for the spec as structured output, cached, with no sampling settings", async () => {
     let sent: any = null;
