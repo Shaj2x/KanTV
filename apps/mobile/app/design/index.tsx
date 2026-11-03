@@ -61,7 +61,8 @@ export default function DesignStudio() {
   const apply = async () => {
     if (!design) return;
     setBusy("apply");
-    const r = await platform.designer.apply(design.id, session.household?.serial ?? "", "launcher");
+    if (!session.householdId) return setError("Set up your TV first, so KanTV knows which TV to put it on.");
+    const r = await platform.designer.apply(design.id, session.householdId, "launcher");
     setBusy(null);
     if (r === "subscription-required") return router.push("/paywall");
     if (typeof r === "string") return setError(FAILURE[r]);

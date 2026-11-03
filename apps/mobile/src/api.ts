@@ -1,13 +1,15 @@
 // The backend client the real app uses on phones and on the web: the designer, the account's entitlement and
 // design history. Every call carries the identity provider's token; the AI key stays on the server.
-import type { Design, DesignFailure, Designer, Entitlement } from "./platform/types";
+import type { Account, Design, DesignFailure, Designer, Entitlement } from "./platform/types";
 
 const FAILURES = new Set<DesignFailure>(["subscription-required", "daily-limit", "too-fast", "busy", "design-refused", "design-invalid", "design-truncated"]);
 
-export function backendDesigner(baseUrl: string, token: () => Promise<string>): Designer {
-  const call = async (method: string, path: string, body?: unknown): Promise<{ status: number; json: any }> => {
+type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
+
+function caller(baseUrl: string, token: () => Promise<string>, fetchImpl: Fetch) {
+  return async (method: string, path: string, body?: unknown): Promise<{ status: number; json: any }> => {
     try {
-      const res = await fetch(`${baseUrl}${path}`, {
+      const res = await fetchImpl(`${baseUrl}${path}`, {
         method,
         headers: { "content-type": "application/json", authorization: `Bearer ${await token()}` },
         body: body === undefined ? undefined : JSON.stringify(body),
@@ -17,6 +19,10 @@ export function backendDesigner(baseUrl: string, token: () => Promise<string>): 
       return { status: 0, json: { error: "offline" } };
     }
   };
+}
+
+export function backendDesigner(baseUrl: string, token: () => Promise<string>, fetchImpl: Fetch = fetch): Designer {
+  const call = caller(baseUrl, token, fetchImpl);
   const designOr = (r: { status: number; json: any }): Design | DesignFailure =>
     r.status === 200 ? (r.json.design as Design) : FAILURES.has(r.json.error) ? r.json.error : "offline";
 
@@ -29,6 +35,21 @@ export function backendDesigner(baseUrl: string, token: () => Promise<string>): 
     apply: async (id, household, instance) => {
       const r = await call("POST", `/v1/me/designs/${id}/apply`, { household, instance });
       return r.status === 200 ? r.json : FAILURES.has(r.json.error) ? r.json.error : "offline";
+    },
+  };
+}
+
+export function backendAccount(baseUrl: string, token: () => Promise<string>, fetchImpl: Fetch = fetch): Account {
+  const call = caller(baseUrl, token, fetchImpl);
+  return {
+    async registerTv(ids, model) {
+      const r = await call("POST", "/v1/me/tvs", { ...ids, model: model.slice(0, 200) });
+      return r.status === 200 ? r.json : "offline";
+    },
+    async lease(household, instance) {
+      const r = await call("POST", "/v1/me/leases", { household, instance });
+      if (r.status === 200) return { lease: r.json.lease, expiresAt: r.json.expiresAt };
+      return r.json?.error === "subscription-required" ? "subscription-required" : "offline";
     },
   };
 }

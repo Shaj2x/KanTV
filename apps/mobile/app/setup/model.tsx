@@ -56,6 +56,11 @@ export default function Model() {
           detail={`${m.item.os}${m.item.launcher === "unsupported" ? " · cleanup only, keeps its own home screen" : ""}`}
         />
       ))}
+      {session.trial === "used-on-this-tv" ? (
+        <Card>
+          <Text style={type.small}>This TV has already had its free week on another account. Cleanup and Restore are still free.</Text>
+        </Card>
+      ) : null}
       <Text style={[type.tiny, { marginTop: space(2) }]}>
         Lists come from the open-source cleanyourtv project, each tested on a real TV by its owner.
       </Text>

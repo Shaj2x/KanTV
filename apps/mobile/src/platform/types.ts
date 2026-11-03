@@ -66,6 +66,14 @@ export interface Designer {
   apply(id: string, household: string, instance: string): Promise<{ config: LauncherConfig; lease: string; expiresAt: string } | DesignFailure>;
 }
 
+export type TrialStatus = "started" | "active" | "expired" | "used-on-this-tv" | "used-by-account";
+
+/** The account side of a TV: registering it (which decides the free trial) and its pass for the launcher. */
+export interface Account {
+  registerTv(ids: { serial?: string; androidId?: string }, model: string): Promise<{ household: string; trial: TrialStatus; entitlement: Entitlement } | "offline">;
+  lease(household: string, instance: string): Promise<{ lease: string; expiresAt: string } | "subscription-required" | "offline">;
+}
+
 export interface Plan {
   id: "monthly" | "yearly";
   /** As the store shows it, in the user's currency. */
@@ -95,4 +103,5 @@ export interface Platform {
   settleDelayMs: number;
   designer: Designer;
   purchases: Purchases;
+  account: Account;
 }

@@ -2,7 +2,7 @@
 // the screens; this only holds what they found out.
 import type { DebloatResult, DisablePlan, Feed, FeedList, FeedModel, HouseholdIds, ListChoice, TvIdentity } from "@kantv/core";
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import type { FoundTv, TvConnection } from "./platform";
+import type { FoundTv, TrialStatus, TvConnection } from "./platform";
 
 export interface Session {
   tv?: FoundTv;
@@ -20,6 +20,9 @@ export interface Session {
   closed?: "closed" | "open" | "unknown";
   /** The TV's apps people put in a dock, read during setup, for the designer. */
   installedApps?: { package: string; label: string }[];
+  /** The backend's ID for this TV, once registered; designs are applied to it. */
+  householdId?: string;
+  trial?: TrialStatus;
 }
 
 const Ctx = createContext<{ s: Session; set: (patch: Partial<Session>) => void; reset: () => void } | null>(null);

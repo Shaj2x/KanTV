@@ -57,3 +57,18 @@ export async function verifyFeed(
   if (feed.version !== 1) throw new Error("unknown list feed version");
   return feed;
 }
+
+/**
+ * Downloads the feed and its signature and returns the feed only if the signature verifies with the key the app
+ * ships with. Anything else (network failure, wrong signature, wrong version) throws: the app then keeps the
+ * last verified feed it has.
+ */
+export async function fetchFeed(
+  baseUrl: string,
+  publicKeyRaw: Uint8Array<ArrayBuffer>,
+  fetchImpl: (url: string) => Promise<{ ok: boolean; arrayBuffer(): Promise<ArrayBuffer> }> = fetch,
+): Promise<Feed> {
+  const [feed, sig] = await Promise.all([fetchImpl(`${baseUrl}/v1/lists/feed.json`), fetchImpl(`${baseUrl}/v1/lists/feed.json.sig`)]);
+  if (!feed.ok || !sig.ok) throw new Error("the list feed could not be downloaded");
+  return verifyFeed(new Uint8Array(await feed.arrayBuffer()), new Uint8Array(await sig.arrayBuffer()), publicKeyRaw);
+}

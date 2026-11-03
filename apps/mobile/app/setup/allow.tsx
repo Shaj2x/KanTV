@@ -36,6 +36,11 @@ export default function Allow() {
       const identity = await readIdentity(connection.shell);
       const [household, feed] = await Promise.all([householdIds(identity), platform.feed()]);
       set({ connection, identity, household, feed });
+      // Registering decides the free trial. Cleanup and Restore are free, so setup never waits on it: offline,
+      // it is tried again when the person first designs.
+      const model = [identity.props.manufacturer, identity.props.model].filter(Boolean).join(" ");
+      const reg = await platform.account.registerTv({ serial: household.serial, androidId: household.androidId }, model);
+      if (reg !== "offline") set({ householdId: reg.household, trial: reg.trial });
       router.replace("/setup/model");
     } catch (e) {
       setError(e instanceof AdbError ? e.kind : "closed");

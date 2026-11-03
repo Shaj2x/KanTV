@@ -4,7 +4,7 @@ import type { Feed, RecordStore, RecoveryRecord } from "@kantv/core";
 import type { Platform, RemoteKeys } from "../types";
 import { DemoTvShell, newDemoTv, type DemoTvState } from "./demoTv";
 import feed from "./feed.json";
-import { demoDesigner, demoPurchases } from "./designs";
+import { demoAccount, demoDesigner, demoPurchases } from "./designs";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -70,4 +70,5 @@ export const demoPlatform: Platform = {
   settleDelayMs: 1500,
   designer: demoDesigner,
   purchases: demoPurchases,
+  account: demoAccount,
 };

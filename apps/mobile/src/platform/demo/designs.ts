@@ -2,7 +2,7 @@
 // design studio, saved designs, applying and the paywall can be tried in a browser. The trial and the store are
 // pretend too; the sample prices are placeholders until the real ones are set in the stores.
 import { DEFAULT_THEME, checkTheme, compileTheme, type ThemeSpec } from "@kantv/core";
-import type { Design, Designer, Entitlement, Plan, Purchases } from "../types";
+import type { Account, Design, Designer, Entitlement, Plan, Purchases } from "../types";
 
 const DAY = 24 * 3600_000;
 const s = (patch: Partial<ThemeSpec> & Pick<ThemeSpec, "name" | "summary" | "palette">): ThemeSpec => ({
@@ -143,4 +143,18 @@ export const demoPurchases: Purchases = {
     return "bought";
   },
   restore: async () => subscribed,
+};
+
+let registered = false;
+
+/** The preview's account: registering the TV starts the pretend trial, as the backend does for a new TV. */
+export const demoAccount: Account = {
+  async registerTv() {
+    const trial = registered ? (entitlement().plan === "trial" ? "active" : "expired") : "started";
+    registered = true;
+    return { household: "demo-household", trial, entitlement: entitlement() };
+  },
+  async lease() {
+    return entitlement().entitled ? { lease: "preview", expiresAt: new Date(trialEndsAt).toISOString() } : "subscription-required";
+  },
 };
