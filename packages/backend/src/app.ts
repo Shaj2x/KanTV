@@ -242,6 +242,36 @@ export function createApp(cfg: Config) {
     return c.json({ config: compileTheme(checked.spec!), ...lease });
   });
 
+  // Everything held about the account, for the person to download (privacy law; also linked from the app).
+  app.get("/v1/me/export", async (c) => {
+    const account = await accountFor(cfg.db, c.get("sub"));
+    const q = (sql: string) => cfg.db.query(sql, [account.id]);
+    return c.json({
+      account: (await q("select id, created_at, trial_started_at from accounts where id = $1"))[0],
+      tvs: await q("select household, model, added_at from account_tvs where account = $1"),
+      designs: await q("select id, request, exact, spec, model, created_at from designs where account = $1 order by created_at"),
+      subscription: (await q("select source, product, status, period_end, updated_at from subscriptions where account = $1"))[0] ?? null,
+      note: "TV identifiers are stored only as keyed hashes and are not linked to this account beyond the TV list above.",
+    });
+  });
+
+  // Deleting the account (App Store rule 5.1.1(v), and privacy law). The keyed TV hashes and the household's
+  // trial date stay, unlinked from any account, so deleting and signing up again cannot restart a free trial;
+  // the privacy policy says so.
+  app.delete("/v1/me", async (c) => {
+    const sub = c.get("sub");
+    await cfg.db.transaction(async (tx) => {
+      const [acc] = await tx.query<{ id: string }>("select id from accounts where auth_sub = $1", [sub]);
+      if (!acc) return;
+      await tx.query("delete from designs where account = $1", [acc.id]);
+      await tx.query("delete from account_tvs where account = $1", [acc.id]);
+      await tx.query("delete from subscriptions where account = $1", [acc.id]);
+      await tx.query("update households set trial_account = null where trial_account = $1", [acc.id]);
+      await tx.query("delete from accounts where id = $1", [acc.id]);
+    });
+    return c.json({ deleted: true });
+  });
+
   // The wallpaper.jpg the phone pushes to the TV with the config from /apply.
   app.get("/v1/me/designs/:id/wallpaper.jpg", async (c) => {
     const account = await accountFor(cfg.db, c.get("sub"));

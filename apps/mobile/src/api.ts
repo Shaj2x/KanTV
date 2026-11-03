@@ -51,5 +51,12 @@ export function backendAccount(baseUrl: string, token: () => Promise<string>, fe
       if (r.status === 200) return { lease: r.json.lease, expiresAt: r.json.expiresAt };
       return r.json?.error === "subscription-required" ? "subscription-required" : "offline";
     },
+    async exportData() {
+      const r = await call("GET", "/v1/me/export");
+      return r.status === 200 ? r.json : "offline";
+    },
+    async deleteAccount() {
+      return (await call("DELETE", "/v1/me")).status === 200;
+    },
   };
 }

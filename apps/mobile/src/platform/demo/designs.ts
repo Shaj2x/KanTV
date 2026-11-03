@@ -157,4 +157,9 @@ export const demoAccount: Account = {
   async lease() {
     return entitlement().entitled ? { lease: "preview", expiresAt: new Date(trialEndsAt).toISOString() } : "subscription-required";
   },
+  exportData: async () => ({ designs: saved }),
+  async deleteAccount() {
+    saved.length = 0;
+    return true;
+  },
 };

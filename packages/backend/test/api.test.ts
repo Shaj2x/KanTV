@@ -192,3 +192,22 @@ describe("requests", () => {
     expect(stored).not.toContain(TV1.androidId);
   });
 });
+
+describe("the person's data", () => {
+  it("can be downloaded", async () => {
+    await register("alice", TV1);
+    const out = (await call("GET", "/v1/me/export", "alice")).json;
+    expect(out.tvs).toHaveLength(1);
+    expect(out.tvs[0].model).toBe("Chromecast");
+    expect(JSON.stringify(out)).not.toContain(TV1.serial);
+  });
+
+  it("can be deleted, and a new account on the same TV still gets no second trial", async () => {
+    await register("alice", TV1);
+    expect((await call("DELETE", "/v1/me", "alice")).json).toEqual({ deleted: true });
+    const again = await call("GET", "/v1/me/export", "alice");
+    expect(again.json.tvs).toEqual([]);
+    expect(again.json.designs).toEqual([]);
+    expect((await register("alice", TV1)).json.trial).toBe("used-on-this-tv");
+  });
+});

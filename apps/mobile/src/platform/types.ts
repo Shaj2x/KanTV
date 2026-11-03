@@ -72,6 +72,10 @@ export type TrialStatus = "started" | "active" | "expired" | "used-on-this-tv" |
 export interface Account {
   registerTv(ids: { serial?: string; androidId?: string }, model: string): Promise<{ household: string; trial: TrialStatus; entitlement: Entitlement } | "offline">;
   lease(household: string, instance: string): Promise<{ lease: string; expiresAt: string } | "subscription-required" | "offline">;
+  /** Everything the backend holds about this account, as JSON. */
+  exportData(): Promise<unknown | "offline">;
+  /** Deletes the account and its designs (the store rules require this in the app). */
+  deleteAccount(): Promise<boolean>;
 }
 
 export interface Plan {
