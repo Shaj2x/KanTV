@@ -531,6 +531,10 @@ final class Config {
         File file = dir != null ? new File(dir, FILE_NAME) : null;
         boolean mounted = Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
         JSONObject json = readOverlay(ctx, file, mounted);
+        // KanTV: a custom design shows only while the subscription pass is valid; otherwise the built-in look,
+        // with the design kept on disk for when a new pass arrives (KanTvPass).
+        boolean customLook = KanTvPass.allowsCustomLook(ctx);
+        if (!customLook) json = null;
         if (json != null) {
             applied = true;
             dock = stringList(json, "dock_apps", dock);
@@ -653,6 +657,7 @@ final class Config {
         advancedEffects = choices.getBoolean("advanced_effects", advancedEffects);
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
+        if (!customLook) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
         boolean wallpaperEnabled = json == null || bool(json, "wallpaper", true);
         if (!wallpaperEnabled) wallpaper = null;

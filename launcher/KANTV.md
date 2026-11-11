@@ -9,6 +9,8 @@ see `../THIRD_PARTY_NOTICES.md`), at the upstream commit in `../upstream.lock.js
 |---|---|
 | Application ID `tv.kantv.home`, so it installs beside upstream's `com.gathin.tvhome` | `gradle.properties` |
 | Name "KanTV Home" in every language (translations of the brand removed) | `res/values*/strings.xml` |
+| Subscription pass: a custom design (overlay and wallpaper) shows only while the backend-signed pass is valid; the built-in look otherwise, with the design kept on disk. On only when the build carries the public key (`-PkantvLeaseX`, `-PkantvLeaseY`) | `Lease.java`, `KanTvPass.java`, `Config.load`, `build.gradle` |
+| `kantv_instance` and `kantv_lease.jws` accepted by the theme provider, for the phone to read and write | `ThemeFiles.java` |
 
 The Java package stays `com.gathin.tvhome` and the module-card intents keep upstream's names, so upstream fixes
 merge cleanly and upstream add-ons still work.

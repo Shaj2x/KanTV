@@ -13,6 +13,14 @@ android {
         targetSdk 34
         versionCode 11
         versionName '3.2'
+        // KanTV: the backend's subscription-pass public key (JWK x and y, base64url; public, from
+        // scripts/gen-secrets.ts public.json). Empty: no pass check, any pushed theme shows (KanTvPass.java).
+        buildConfigField 'String', 'KANTV_LEASE_X', "\"${providers.gradleProperty('kantvLeaseX').getOrElse('')}\""
+        buildConfigField 'String', 'KANTV_LEASE_Y', "\"${providers.gradleProperty('kantvLeaseY').getOrElse('')}\""
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {
