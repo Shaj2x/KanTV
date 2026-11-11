@@ -21,3 +21,7 @@ apps/mobile/.expo/
 .claude/
 CLAUDE.md
 AGENTS.md
+launcher/local.properties
+launcher/.gradle/
+launcher/app/build/
+launcher/build/
