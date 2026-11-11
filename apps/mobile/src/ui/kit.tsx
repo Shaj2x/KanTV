@@ -1,6 +1,6 @@
 // The building blocks every screen uses: the screen frame (header, demo notice, sticky action), buttons,
 // cards, rows. Kept in one file so the look stays consistent.
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,11 +35,13 @@ export function Screen({
   footer?: ReactNode;
   back?: boolean;
 }) {
+  // From the navigator, not the imperative router, which isn't up yet when the app opens straight onto a screen.
+  const canGoBack = useNavigation().canGoBack();
   return (
     <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
       <DemoBanner />
       <View style={s.topBar}>
-        {back && router.canGoBack() ? (
+        {back && canGoBack ? (
           <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back" style={s.backBtn}>
             <Icon name="back" />
           </Pressable>

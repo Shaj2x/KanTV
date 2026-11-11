@@ -2,6 +2,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useAuth } from "../src/auth";
 import { platform, type Entitlement } from "../src/platform";
 import { demoEndTrial } from "../src/platform/demo/designs";
 import { useSession } from "../src/session";
@@ -35,13 +36,15 @@ function trialLine(e: Entitlement | null): string | null {
 }
 
 export default function Home() {
+  const auth = useAuth();
   const { s: session } = useSession();
   const done = session.result;
   const [ent, setEnt] = useState<Entitlement | null>(null);
   useFocusEffect(
     useCallback(() => {
-      void platform.designer.entitlement().then(setEnt);
-    }, []),
+      if (auth.signedIn) void platform.designer.entitlement().then(setEnt);
+      else setEnt(null);
+    }, [auth.signedIn]),
   );
   const line = trialLine(ent);
   return (
@@ -72,7 +75,14 @@ export default function Home() {
         <Tile icon="restore" title="Restore my TV" detail="Put everything back the way it was. Always free." onPress={() => router.push("/restore")} />
       </View>
       {line ? <Text style={[type.small, { textAlign: "center" }]}>{line}</Text> : null}
-      {platform.mode === "demo" && ent?.entitled && ent.plan === "trial" ? (
+      {auth.live ? (
+        auth.signedIn ? (
+          <Button kind="ghost" label={`Account · ${auth.email ?? ""}`} onPress={() => router.push("/account")} />
+        ) : (
+          <Button kind="ghost" label="Sign in" onPress={() => router.push("/signin")} />
+        )
+      ) : null}
+      {!platform.designer.live && ent?.entitled && ent.plan === "trial" ? (
         <Button kind="ghost" label="Preview: end the free trial" onPress={() => (demoEndTrial(), void platform.designer.entitlement().then(setEnt))} />
       ) : null}
     </Screen>

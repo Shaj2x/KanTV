@@ -1,0 +1,8 @@
+<!-- KanTV's sign-in email. In the Supabase dashboard (Authentication → Emails), paste this into both the
+     "Magic link" and the "Confirm signup" templates, so new and returning people both get a code. -->
+<div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; max-width: 420px; margin: 0 auto; padding: 24px; color: #1b1305">
+  <p style="font-weight: 700; letter-spacing: 1px; color: #b8741a; margin: 0 0 16px">KANTV</p>
+  <p style="font-size: 16px; margin: 0 0 16px">Your sign-in code:</p>
+  <p style="font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 0 0 16px">{{ .Token }}</p>
+  <p style="font-size: 14px; color: #555; margin: 0">It works for 10 minutes. If you didn't ask for it, you can ignore this email.</p>
+</div>

@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono, type Context } from "hono";
+import { cors } from "hono/cors";
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import { z } from "zod";
 import type { Db } from "./db.ts";
@@ -26,6 +27,13 @@ export interface Config {
   /** The AI designer; without it the design routes answer 503. */
   designer?: { model: ThemeModel; limits: DesignLimits; random?: () => number };
   now?: () => Date;
+  /**
+   * Deletes the sign-in identity itself when an account is deleted (Supabase: the admin API with the project's
+   * secret key). Without it only KanTV's own data is deleted.
+   */
+  deleteIdentity?: (sub: string) => Promise<void>;
+  /** Origins of the KanTV web app allowed to call the API from a browser (the phone apps need none). */
+  webOrigins?: string[];
 }
 
 export interface DesignLimits {
@@ -39,12 +47,40 @@ export interface DesignLimits {
 
 export const DEFAULT_DESIGN_LIMITS: DesignLimits = { perDayTrial: 25, perDaySubscriber: 80, minIntervalMs: 3000, dailyBudgetMicroUsd: 50_000_000 };
 
+/**
+ * Sign-in is Supabase Auth. With SUPABASE_URL set, tokens are checked against the project's published signing
+ * keys (asymmetric JWT signing keys, served at /auth/v1/.well-known/jwks.json), its issuer and the "authenticated"
+ * audience. SUPABASE_JWT_SECRET additionally accepts tokens signed with a project's legacy HS256 secret, for
+ * projects not yet moved to signing keys. AUTH_JWKS_URL, AUTH_ISSUER and AUTH_AUDIENCE stay available for any
+ * other OpenID provider.
+ */
 export function authFromEnv(env: NodeJS.ProcessEnv): Config["auth"] {
-  return {
-    jwks: createRemoteJWKSet(new URL(env.AUTH_JWKS_URL!)),
-    issuer: env.AUTH_ISSUER!,
-    audience: env.AUTH_AUDIENCE!,
+  const supabase = env.SUPABASE_URL?.replace(/\/+$/, "");
+  const jwksUrl = env.AUTH_JWKS_URL ?? (supabase && `${supabase}/auth/v1/.well-known/jwks.json`);
+  const issuer = env.AUTH_ISSUER ?? (supabase && `${supabase}/auth/v1`);
+  const audience = env.AUTH_AUDIENCE ?? (supabase ? "authenticated" : undefined);
+  if (!jwksUrl || !issuer || !audience) throw new Error("set SUPABASE_URL, or AUTH_JWKS_URL, AUTH_ISSUER and AUTH_AUDIENCE");
+  const remote = createRemoteJWKSet(new URL(jwksUrl));
+  const secret = env.SUPABASE_JWT_SECRET ? new TextEncoder().encode(env.SUPABASE_JWT_SECRET) : undefined;
+  return { jwks: withLegacySecret(remote, secret), issuer, audience };
+}
+
+/** Deletes a Supabase Auth user with the project's secret (service role) key. A user already gone counts as done. */
+export function supabaseIdentityDeleter(supabaseUrl: string, secretKey: string, fetchImpl: typeof fetch = fetch) {
+  const base = supabaseUrl.replace(/\/+$/, "");
+  return async (sub: string) => {
+    const res = await fetchImpl(`${base}/auth/v1/admin/users/${encodeURIComponent(sub)}`, {
+      method: "DELETE",
+      headers: { apikey: secretKey, authorization: `Bearer ${secretKey}` },
+    });
+    if (!res.ok && res.status !== 404) throw new Error(`auth admin delete: ${res.status}`);
   };
+}
+
+/** HS256 tokens go to the shared secret when there is one; everything else to the published keys. */
+export function withLegacySecret(jwks: JWTVerifyGetKey, secret: Uint8Array | undefined): JWTVerifyGetKey {
+  if (!secret) return jwks;
+  return (header, token) => (header.alg === "HS256" ? secret : jwks(header, token));
 }
 
 type Vars = { Variables: { sub: string } };
@@ -85,6 +121,10 @@ function safeEqual(a: string, b: string): boolean {
 export function createApp(cfg: Config) {
   const now = cfg.now ?? (() => new Date());
   const app = new Hono<Vars>();
+  // The web app calls with a bearer token, never cookies, so only its own origins are let in.
+  if (cfg.webOrigins?.length) {
+    app.use("*", cors({ origin: cfg.webOrigins, allowHeaders: ["authorization", "content-type"], allowMethods: ["GET", "POST", "DELETE"], maxAge: 600 }));
+  }
 
   app.get("/healthz", (c) => c.json({ ok: true }));
   app.get("/v1/lease-key", (c) => c.json({ keys: [cfg.leaseKeys.publicJwk] }));
@@ -110,7 +150,8 @@ export function createApp(cfg: Config) {
     if (!token) return c.json({ error: "sign-in-required" }, 401);
     try {
       const { payload } = await jwtVerify(token, cfg.auth.jwks, { issuer: cfg.auth.issuer, audience: cfg.auth.audience });
-      if (!payload.sub) return c.json({ error: "sign-in-required" }, 401);
+      // Supabase's anonymous sign-ins carry the same audience; a trial needs a real account.
+      if (!payload.sub || payload.is_anonymous === true) return c.json({ error: "sign-in-required" }, 401);
       c.set("sub", payload.sub);
     } catch {
       return c.json({ error: "sign-in-required" }, 401);
@@ -269,6 +310,14 @@ export function createApp(cfg: Config) {
       await tx.query("update households set trial_account = null where trial_account = $1", [acc.id]);
       await tx.query("delete from accounts where id = $1", [acc.id]);
     });
+    // After our data is gone, so a failure here can be retried by deleting again.
+    if (cfg.deleteIdentity) {
+      try {
+        await cfg.deleteIdentity(sub);
+      } catch {
+        return c.json({ error: "identity-delete-failed" }, 502);
+      }
+    }
     return c.json({ deleted: true });
   });
 

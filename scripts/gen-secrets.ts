@@ -41,7 +41,7 @@ const env = [
   `KANTV_PEPPER=${randomBytes(48).toString("base64url")}`,
   `KANTV_LEASE_JWK=${JSON.stringify(lease.privateJwk)}`,
   `REVENUECAT_WEBHOOK_AUTH=Bearer ${randomBytes(32).toString("base64url")}`,
-  "# Still to fill in: DATABASE_URL, AUTH_JWKS_URL, AUTH_ISSUER, AUTH_AUDIENCE, ANTHROPIC_API_KEY",
+  "# Still to fill in: DATABASE_URL, SUPABASE_URL, ANTHROPIC_API_KEY",
   "",
 ].join("\n");
 

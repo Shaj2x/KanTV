@@ -4,6 +4,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { COMMON_APPS } from "../../src/apps";
+import { useRequireSignIn } from "../../src/auth";
 import { platform, type Design, type DesignFailure, type Entitlement } from "../../src/platform";
 import { useSession } from "../../src/session";
 import { color, radius, space, type } from "../../src/theme";
@@ -23,6 +24,7 @@ const FAILURE: Record<Exclude<DesignFailure, "subscription-required">, string> =
 };
 
 export default function DesignStudio() {
+  const ok = useRequireSignIn("/design");
   const { s: session } = useSession();
   const apps = session.installedApps?.length ? session.installedApps : COMMON_APPS;
   const [request, setRequest] = useState("");
@@ -34,8 +36,8 @@ export default function DesignStudio() {
   const [ent, setEnt] = useState<Entitlement | null>(null);
   useFocusEffect(
     useCallback(() => {
-      void platform.designer.entitlement().then(setEnt);
-    }, []),
+      if (ok) void platform.designer.entitlement().then(setEnt);
+    }, [ok]),
   );
 
   const handle = (r: Design | DesignFailure) => {

@@ -10,7 +10,9 @@
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
     "conformance": "tsx conformance/run.ts",
-    "lists:build": "tsx scripts/lists/build.ts"
+    "lists:build": "tsx scripts/lists/build.ts",
+    "dev:stack": "tsx scripts/dev-stack.ts",
+    "dev:api": "tsx --env-file=dev/backend.env packages/backend/src/server.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

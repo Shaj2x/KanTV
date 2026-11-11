@@ -25,3 +25,5 @@ launcher/local.properties
 launcher/.gradle/
 launcher/app/build/
 launcher/build/
+dev/.env
+dev/*.env

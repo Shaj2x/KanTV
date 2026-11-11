@@ -32,7 +32,7 @@ export async function migrate(db: Db): Promise<string[]> {
 /** postgres.js, for production. */
 export async function postgresDb(url: string): Promise<Db> {
   const { default: postgres } = await import("postgres");
-  const sql = postgres(url, { max: 10 });
+  const sql = postgres(url, { max: 10, onnotice: () => {} });
   const wrap = (q: { unsafe: (s: string, p?: never[]) => Promise<unknown> }): Db => ({
     query: async <T>(s: string, p: unknown[] = []) => (await q.unsafe(s, p as never[])) as T[],
     transaction: (f) => sql.begin((tx) => f(wrap(tx as never))) as never,

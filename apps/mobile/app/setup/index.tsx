@@ -3,6 +3,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
+import { useRequireSignIn } from "../../src/auth";
 import { color, space, type } from "../../src/theme";
 import { Button, Card, Choice, Screen } from "../../src/ui/kit";
 import { TvPicture } from "../../src/ui/TvPicture";
@@ -73,6 +74,8 @@ const PAGES: Record<Family, { title: string; body: string; picture: Parameters<t
 };
 
 export default function Prepare() {
+  // The account comes first: registering the TV during setup is what starts its free week.
+  useRequireSignIn("/setup");
   const [family, setFamily] = useState<Family | null>(null);
   const [page, setPage] = useState(0);
 

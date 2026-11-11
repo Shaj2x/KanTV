@@ -3,11 +3,13 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
+import { useRequireSignIn } from "../src/auth";
 import { platform, type Entitlement, type Plan } from "../src/platform";
 import { color, space, type } from "../src/theme";
 import { Button, Card, Choice, Screen, Status } from "../src/ui/kit";
 
 export default function Paywall() {
+  const ok = useRequireSignIn("/paywall");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [pick, setPick] = useState<Plan["id"]>("monthly");
   const [ent, setEnt] = useState<Entitlement | null>(null);
@@ -16,8 +18,8 @@ export default function Paywall() {
 
   useEffect(() => {
     void platform.purchases.plans().then(setPlans);
-    void platform.designer.entitlement().then(setEnt);
-  }, []);
+    if (ok) void platform.designer.entitlement().then(setEnt);
+  }, [ok]);
 
   const buy = async () => {
     setBusy(true);

@@ -129,10 +129,10 @@ export const demoDesigner: Designer = {
   },
 };
 
-/** Placeholder prices for the preview only; the stores show the real, local ones. */
+/** The US prices; the stores show the local ones. */
 const PLANS: Plan[] = [
-  { id: "monthly", price: "$4.99 / month", perMonth: "$4.99" },
-  { id: "yearly", price: "$34.99 / year", perMonth: "$2.92", note: "Save 42%" },
+  { id: "monthly", price: "$5.00 / month", perMonth: "$5.00" },
+  { id: "yearly", price: "$24.99 / year", perMonth: "$2.08", note: "Save 58%" },
 ];
 
 export const demoPurchases: Purchases = {

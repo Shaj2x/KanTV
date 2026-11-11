@@ -38,7 +38,7 @@
 > • Setup switches the TV's debugging off again when it's done, and checks that it really is off
 > • Your TV's serial number never leaves your phone
 >
-> Free for 7 days with everything included. Then [price]/month or [price]/year for the AI designer and your
+> Free for 7 days with everything included. Then $5/month or $24.99/year for the AI designer and your
 > custom look. Restore is always free.
 >
 > Works with Android TV and Google TV (Sony, TCL, Hisense, Xiaomi, Philips, Chromecast with Google TV, Google TV

@@ -45,7 +45,7 @@ delete your account in the app at any time.
   TV switches to the free KanTV default look and keeps working; your designs are kept and come back when you
   subscribe.
 - **Restore my TV is always free.**
-- Subscriptions are [monthly at [price]] or [yearly at [price]], billed by the App Store, Google Play or Stripe,
+- Subscriptions are monthly at US$5.00 or yearly at US$24.99 (or the local price the store shows), billed by the App Store, Google Play or Stripe,
   and **renew automatically** until you cancel in your store account settings at least 24 hours before renewal.
   Refunds follow the store's policy [and the law where you live].
 - We may change prices with notice; changes apply from your next renewal.

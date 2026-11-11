@@ -3,17 +3,19 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { useRequireSignIn } from "../../src/auth";
 import { platform, type Design } from "../../src/platform";
 import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, Screen } from "../../src/ui/kit";
 import { ThemePreview } from "../../src/ui/ThemePreview";
 
 export default function Saved() {
+  const ok = useRequireSignIn("/design/saved");
   const [designs, setDesigns] = useState<Design[] | null>(null);
   useFocusEffect(
     useCallback(() => {
-      void platform.designer.list().then(setDesigns);
-    }, []),
+      if (ok) void platform.designer.list().then(setDesigns);
+    }, [ok]),
   );
   const locked = designs?.some((d) => d.locked);
 

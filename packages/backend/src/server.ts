@@ -1,20 +1,26 @@
 // Production entry point. Configuration comes from the environment (secrets from the host's secret store):
-//   DATABASE_URL, KANTV_PEPPER, KANTV_LEASE_JWK (private EC P-256 JWK as JSON), AUTH_JWKS_URL, AUTH_ISSUER,
-//   AUTH_AUDIENCE, REVENUECAT_WEBHOOK_AUTH, PORT
+//   DATABASE_URL, KANTV_PEPPER, KANTV_LEASE_JWK (private EC P-256 JWK as JSON), REVENUECAT_WEBHOOK_AUTH, PORT
+// Sign-in: SUPABASE_URL (and SUPABASE_JWT_SECRET for a project still on the legacy HS256 secret), plus
+//   SUPABASE_SECRET_KEY so deleting an account also deletes its Supabase login; or
+//   AUTH_JWKS_URL, AUTH_ISSUER and AUTH_AUDIENCE for another OpenID provider
 // The AI designer (optional; without it the design routes answer 503): ANTHROPIC_API_KEY, KANTV_THEME_MODEL
 //   (default claude-haiku-5-5), KANTV_THEME_EFFORT (low, medium, high; default low), KANTV_AI_DAILY_BUDGET_USD
 //   (default 50)
 // The list feed (optional): KANTV_FEED_DIR, a folder holding feed.json and feed.json.sig
+// The web app (optional): KANTV_WEB_ORIGINS, comma-separated origins allowed to call from a browser
 import { serve } from "@hono/node-server";
-import { createApp, authFromEnv } from "./app.ts";
+import { createApp, authFromEnv, supabaseIdentityDeleter } from "./app.ts";
 import { migrate, postgresDb } from "./db.ts";
 import { leaseKeysFromJwk } from "./leases.ts";
 import Anthropic from "@anthropic-ai/sdk";
 import { DEFAULT_DESIGN_LIMITS } from "./app.ts";
 import { claudeThemeModel } from "./designer.ts";
 
-const required = ["DATABASE_URL", "KANTV_PEPPER", "KANTV_LEASE_JWK", "AUTH_JWKS_URL", "AUTH_ISSUER", "AUTH_AUDIENCE", "REVENUECAT_WEBHOOK_AUTH"];
+const required = ["DATABASE_URL", "KANTV_PEPPER", "KANTV_LEASE_JWK", "REVENUECAT_WEBHOOK_AUTH"];
 const missing = required.filter((k) => !process.env[k]);
+if (!process.env.SUPABASE_URL && !(process.env.AUTH_JWKS_URL && process.env.AUTH_ISSUER && process.env.AUTH_AUDIENCE)) {
+  missing.push("SUPABASE_URL (or AUTH_JWKS_URL, AUTH_ISSUER, AUTH_AUDIENCE)");
+}
 if (missing.length) {
   console.error(`missing configuration: ${missing.join(", ")}`);
   process.exit(1);
@@ -34,6 +40,9 @@ const app = createApp({
   auth: authFromEnv(process.env),
   revenueCatWebhookAuth: process.env.REVENUECAT_WEBHOOK_AUTH!,
   feedDir: process.env.KANTV_FEED_DIR,
+  deleteIdentity:
+    process.env.SUPABASE_URL && process.env.SUPABASE_SECRET_KEY ? supabaseIdentityDeleter(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY) : undefined,
+  webOrigins: process.env.KANTV_WEB_ORIGINS?.split(",").map((o) => o.trim()).filter(Boolean),
   designer: process.env.ANTHROPIC_API_KEY
     ? {
         model: claudeThemeModel(

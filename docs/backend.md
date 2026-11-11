@@ -37,8 +37,11 @@ expires the launcher shows the free default look and keeps the custom theme on d
 
 ## Configuration
 
-`DATABASE_URL`, `KANTV_PEPPER` (32+ characters), `KANTV_LEASE_JWK` (private EC P-256 JWK), `AUTH_JWKS_URL`,
-`AUTH_ISSUER`, `AUTH_AUDIENCE`, `REVENUECAT_WEBHOOK_AUTH`, `PORT`. All secrets live in the host's secret
+`DATABASE_URL`, `KANTV_PEPPER` (32+ characters), `KANTV_LEASE_JWK` (private EC P-256 JWK),
+`REVENUECAT_WEBHOOK_AUTH`, `PORT`, and sign-in: `SUPABASE_URL` (Supabase Auth; tokens checked against the
+project's published signing keys, issuer `<url>/auth/v1`, audience `authenticated`; anonymous sign-ins refused),
+plus `SUPABASE_JWT_SECRET` only for a project still on the legacy HS256 secret. `AUTH_JWKS_URL`, `AUTH_ISSUER`
+and `AUTH_AUDIENCE` override these for any other OpenID provider. All secrets live in the host's secret
 store, never in the repo. Migrations in `migrations/` run at start.
 
 ## The AI designer (Phase 2)
