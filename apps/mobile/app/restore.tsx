@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
 import { platform } from "../src/platform";
+import { success } from "../src/feedback";
 import { demoTapAllow } from "../src/platform/demo";
 import { useSession } from "../src/session";
 import { space, type } from "../src/theme";
@@ -48,6 +49,7 @@ export default function Restore() {
       }
       set({ connection, closed: undefined });
       setStage("done");
+      success();
     } catch {
       setStage("failed");
     }

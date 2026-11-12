@@ -2,12 +2,14 @@
 // Designs come from the AI designer on KanTV's server; after the free week this sends people to the paywall.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import Animated, { Easing, FadeInDown, ReduceMotion } from "react-native-reanimated";
 import { COMMON_APPS } from "../../src/apps";
 import { useRequireSignIn } from "../../src/auth";
+import { success } from "../../src/feedback";
 import { platform, type Design, type DesignFailure, type Entitlement } from "../../src/platform";
 import { useSession } from "../../src/session";
-import { color, radius, space, type } from "../../src/theme";
+import { color, radius, space, type, web } from "../../src/theme";
 import { Button, Card, CheckRow, Screen } from "../../src/ui/kit";
 import { ThemePreview } from "../../src/ui/ThemePreview";
 
@@ -69,10 +71,46 @@ export default function DesignStudio() {
     if (r === "subscription-required") return router.push("/paywall");
     if (typeof r === "string") return setError(FAILURE[r]);
     setApplied(Object.keys(r.config).length);
+    success();
   };
 
+  const describe = (
+    <View style={{ gap: space(3) }}>
+      <TextInput
+        value={request}
+        onChangeText={(t) => setRequest(t.slice(0, 500))}
+        placeholder="Dark and minimal, a big clock, Netflix first…"
+        placeholderTextColor={color.faint}
+        multiline
+        style={[s.input, web.press]}
+        accessibilityLabel="Describe your home screen"
+      />
+      <View style={s.ideas}>
+        {IDEAS.map((idea) => (
+          <Pressable
+            key={idea}
+            onPress={() => setRequest(idea)}
+            style={({ pressed }) => [s.idea, web.press, request === idea && s.ideaOn, pressed && { transform: [{ scale: 0.96 }] }]}
+            accessibilityRole="button"
+          >
+            <Text style={[type.small, { color: request === idea ? color.accent : color.text }]} numberOfLines={1}>
+              {idea}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={s.option}>
+        <CheckRow checked={exact} onToggle={() => setExact(!exact)} title="Exactly as I describe" note="Off: KanTV adds its own ideas and never repeats a recent design." />
+      </View>
+      <Button label={design ? "Design a new one" : "Design it"} icon="sparkle" busy={busy === "design"} disabled={!request.trim() || !!busy} onPress={go} />
+    </View>
+  );
+
   return (
-    <Screen title="Design your home screen" subtitle="Describe it the way you'd tell a friend: colours, mood, the clock, which apps go up front.">
+    <Screen
+      title={design ? design.name : "Design your home screen"}
+      subtitle={design ? design.summary : "Describe it the way you'd tell a friend: colours, mood, the clock, which apps go up front."}
+    >
       {ent && !ent.entitled ? (
         <Card tone="accent" style={{ gap: space(3) }}>
           <Text style={type.heading}>Your free week is over</Text>
@@ -80,28 +118,46 @@ export default function DesignStudio() {
           <Button label="See plans" onPress={() => router.push("/paywall")} />
         </Card>
       ) : null}
-      <TextInput
-        value={request}
-        onChangeText={(t) => setRequest(t.slice(0, 500))}
-        placeholder="Dark and minimal, a big clock, Netflix first…"
-        placeholderTextColor={color.faint}
-        multiline
-        style={s.input}
-        accessibilityLabel="Describe your home screen"
-      />
-      <View style={s.ideas}>
-        {IDEAS.map((idea) => (
-          <Pressable key={idea} onPress={() => setRequest(idea)} style={s.idea} accessibilityRole="button">
-            <Text style={[type.small, { color: color.text }]} numberOfLines={1}>
-              {idea}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      <View style={{ backgroundColor: color.surface, borderRadius: radius.lg }}>
-        <CheckRow checked={exact} onToggle={() => setExact(!exact)} title="Exactly as I describe" note="Off: KanTV adds its own ideas and never repeats a recent design." />
-      </View>
-      <Button label={design ? "Design a new one" : "Design it"} icon="sparkle" busy={busy === "design"} disabled={!request.trim() || !!busy} onPress={go} />
+
+      {busy === "design" || busy === "again" ? (
+        <View style={s.tvFrame}>
+          <View style={s.designing}>
+            <ActivityIndicator color={color.accent} />
+            <Text style={type.small}>{busy === "again" ? "Trying a different take…" : "Designing your home screen…"}</Text>
+          </View>
+        </View>
+      ) : design ? (
+        // The result is the point of this screen: it comes first, then what to do with it.
+        <Animated.View key={design.id} entering={REVEAL} style={{ gap: space(3) }}>
+          <View>
+            <View style={s.tvFrame}>
+              <ThemePreview spec={design.spec} />
+            </View>
+            <View style={s.tvStand} />
+          </View>
+          {design.fixes.length ? <Text style={type.tiny}>Adjusted for your TV: {design.fixes.join("; ").toLowerCase()}.</Text> : null}
+          {!platform.designer.live ? <Text style={[type.tiny, { color: color.accent }]}>Preview: a sample design. Real designs are made by the AI designer on KanTV's server.</Text> : null}
+        </Animated.View>
+      ) : null}
+
+      {design && busy !== "design" ? (
+        <View style={{ gap: space(3) }}>
+          {applied !== null ? (
+            <Card tone="ok">
+              <Text style={[type.heading, { color: color.ok }]}>{platform.mode === "demo" ? "Ready for your TV" : "On your TV"}</Text>
+              <Text style={type.small}>
+                {platform.mode === "demo"
+                  ? `Preview: ${applied} settings for this design are ready to send to the KanTV home screen on your TV, once it's installed.`
+                  : "Sent to your TV. It changes the next time you press Home."}
+              </Text>
+            </Card>
+          ) : (
+            <Button label="Put it on my TV" icon="tv" busy={busy === "apply"} disabled={!!busy} onPress={apply} />
+          )}
+          <Button kind="secondary" label="Try another take" busy={busy === "again"} disabled={!!busy} onPress={again} />
+        </View>
+      ) : null}
+
       {error ? (
         <Card tone="warn">
           <Text style={type.small}>{error}</Text>
@@ -109,32 +165,28 @@ export default function DesignStudio() {
       ) : null}
 
       {design ? (
-        <View style={{ gap: space(3) }}>
-          <ThemePreview spec={design.spec} />
-          <Text style={type.title}>{design.name}</Text>
-          <Text style={type.small}>{design.summary}</Text>
-          {design.fixes.length ? <Text style={type.tiny}>Adjusted for your TV: {design.fixes.join("; ").toLowerCase()}.</Text> : null}
-          {!platform.designer.live ? <Text style={[type.tiny, { color: color.accent }]}>Preview: a sample design. Real designs are made by the AI designer on KanTV's server.</Text> : null}
-          <Button label="Put it on my TV" busy={busy === "apply"} disabled={!!busy} onPress={apply} />
-          <Button kind="secondary" label="Try another take" busy={busy === "again"} disabled={!!busy} onPress={again} />
-          {applied !== null ? (
-            <Card tone="ok">
-              <Text style={type.small}>
-                {platform.mode === "demo"
-                  ? `Preview: ${applied} settings for this design are ready to send to the KanTV home screen on your TV, once it's installed.`
-                  : "Sent to your TV. It changes the next time you press Home."}
-              </Text>
-            </Card>
-          ) : null}
+        <View style={{ gap: space(3), marginTop: space(4) }}>
+          <Text style={[type.label, { marginLeft: space(1) }]}>Describe a different look</Text>
+          {describe}
         </View>
-      ) : null}
+      ) : (
+        describe
+      )}
       <Button kind="ghost" label="My designs" onPress={() => router.push("/design/saved")} />
     </Screen>
   );
 }
 
+// The new design arrives: a short rise and fade, so the eye goes to it. Gentler with Reduce Motion.
+const REVEAL = FadeInDown.duration(260).easing(Easing.bezier(0.23, 1, 0.32, 1)).reduceMotion(ReduceMotion.System);
+
 const s = StyleSheet.create({
-  input: { minHeight: 110, backgroundColor: color.surface, color: color.text, borderRadius: radius.lg, padding: space(4), fontSize: 17, lineHeight: 24, textAlignVertical: "top" },
+  input: { minHeight: 110, backgroundColor: color.surface, color: color.text, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, padding: space(4), fontSize: 17, lineHeight: 24, textAlignVertical: "top" },
   ideas: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
-  idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(2), maxWidth: "100%" },
+  idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), paddingVertical: space(2), maxWidth: "100%" },
+  ideaOn: { borderColor: color.accentLine, backgroundColor: color.accentSoft },
+  option: { backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
+  tvFrame: { padding: 6, backgroundColor: color.tvBezel, borderRadius: 12, borderWidth: 1, borderColor: color.line },
+  tvStand: { alignSelf: "center", width: "26%", height: 7, backgroundColor: color.tvBezel, borderBottomLeftRadius: 5, borderBottomRightRadius: 5 },
+  designing: { aspectRatio: 16 / 9, borderRadius: 8, backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3) },
 });

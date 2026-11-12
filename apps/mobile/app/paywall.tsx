@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { useRequireSignIn } from "../src/auth";
+import { success } from "../src/feedback";
 import { platform, type Entitlement, type Plan } from "../src/platform";
 import { color, space, type } from "../src/theme";
 import { Button, Card, Choice, Screen, Status } from "../src/ui/kit";
@@ -25,7 +26,10 @@ export default function Paywall() {
     setBusy(true);
     const r = await platform.purchases.buy(pick);
     setBusy(false);
-    if (r === "bought") router.back();
+    if (r === "bought") {
+      success();
+      router.back();
+    }
     else if (r === "failed") setNote("The purchase didn't go through. Nothing was charged.");
   };
   const restore = async () => setNote((await platform.purchases.restore()) ? "Restored. Welcome back." : "No subscription found for this account.");

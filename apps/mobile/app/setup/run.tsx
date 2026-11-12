@@ -8,6 +8,7 @@ import { dockableApps } from "../../src/apps";
 import { friendlyName } from "../../src/labels";
 import { platform } from "../../src/platform";
 import { useSession } from "../../src/session";
+import { success } from "../../src/feedback";
 import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, Screen, Status } from "../../src/ui/kit";
 
@@ -47,6 +48,7 @@ export default function Run() {
         await new Promise((r) => setTimeout(r, platform.settleDelayMs));
         set({ result });
         setStage("done");
+        success();
       } catch (e) {
         setFailure(String((e as Error).message ?? e));
         setStage("failed");

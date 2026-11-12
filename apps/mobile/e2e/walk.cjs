@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
   try {
     await page.goto(`http://127.0.0.1:${port}/`);
     await see("Make your TV yours"); await shot("home");
-    await tap("Start"); await see("Which home screen"); await shot("tv-family");
+    await tap("Set up my TV"); await see("Which home screen"); await shot("tv-family");
     await tap("Google TV"); await see("Find the build number"); await shot("dev-mode-1");
     await tap("Next"); await see("Turn on USB debugging"); await shot("dev-mode-2");
     await tap("Next"); await see("Wireless or Network debugging"); await shot("dev-mode-3");

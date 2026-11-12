@@ -34,7 +34,7 @@ const server = http.createServer((req, res) => {
     await page.getByLabel("Code from the email").fill(await latestCode()); await tap("Sign in");
   };
   const setUpTv = async () => {
-    await tap("Start"); await see("Which home screen");
+    await tap("Set up my TV"); await see("Which home screen");
     await tap("Google TV"); await tap("Next"); await tap("Next"); await tap("Done, find my TV");
     await see("Living room TV"); await tap("Living room TV"); await see("Look at your TV");
     await tap("Preview: tap Allow on the TV"); await see("Is this your TV?");
