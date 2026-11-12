@@ -3,12 +3,26 @@
 // stays consistent: a change here reaches every screen.
 import { router, useNavigation } from "expo-router";
 import type { ReactNode } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { platform } from "../platform";
 import { bars, color, layout, radius, space, type, web } from "../theme";
 import { Brand, LitTv, useAmbient } from "./ambient";
 import { Icon, type IconName } from "./Icon";
+import { Press } from "./Press";
+import Animated, { Keyframe } from "react-native-reanimated";
+import { EASE_OUT, stateTransition } from "../motion";
+
+// A tick landing: grows from 60% with a fade, 220ms. Once per finished step, so it can afford to be felt.
+const TICK = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.6 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }], easing: EASE_OUT },
+}).duration(220);
+// The radio's dot: smaller and quicker; it's picked often.
+const DOT = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 0.5 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }], easing: EASE_OUT },
+}).duration(160);
 
 /** True on a tablet or a desktop browser: the TV moves beside the column instead of stretching it. */
 export function useWide() {
@@ -35,7 +49,7 @@ function Progress({ step }: { step: string }) {
     <View style={s.progress} accessibilityRole="progressbar" accessibilityLabel={`Step ${at} of ${of}`} accessibilityValue={{ min: 0, max: of, now: at }}>
       <View style={s.segments}>
         {Array.from({ length: of }, (_, i) => (
-          <View key={i} style={[s.segment, web.press, i < at - 1 && { backgroundColor: bars[(i + 1) % bars.length] }, i === at - 1 && { backgroundColor: color.text, flex: 1.6 }]} />
+          <Animated.View key={i} style={[s.segment, stateTransition, { transitionDuration: 300 }, i < at - 1 && { backgroundColor: bars[(i + 1) % bars.length] }, i === at - 1 && { backgroundColor: color.text }]} />
         ))}
       </View>
       <Text style={s.stepText}>{`Step ${at} of ${of}`}</Text>
@@ -93,9 +107,9 @@ export function Screen({
     <View style={[s.main, wide && s.mainWide]}>
       <View style={s.topBar}>
         {back && canGoBack ? (
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => [s.backBtn, web.press, pressed && s.backPressed]}>
+          <Press onPress={() => router.back()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => [s.backBtn, pressed && s.backPressed]}>
             <Icon name="back" size={20} />
-          </Pressable>
+          </Press>
         ) : brand && !wide ? (
           <Brand size={26} />
         ) : (
@@ -152,7 +166,7 @@ export function Button({
   // A disabled primary loses its light entirely, so it can't be mistaken for the next step.
   const ink = kind === "primary" ? (off && !busy ? color.faint : color.accentInk) : kind === "danger" ? color.danger : kind === "ghost" ? color.muted : color.text;
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       disabled={off}
       pressRetentionOffset={16}
@@ -161,7 +175,6 @@ export function Button({
       accessibilityState={{ disabled: off, busy: !!busy }}
       style={({ pressed }) => [
         s.btn,
-        web.press,
         kind === "primary" && { backgroundColor: off && !busy ? color.surfaceRaised : pressed || busy ? color.accentPressed : color.accent },
         kind === "secondary" && { backgroundColor: pressed ? color.surfacePressed : "transparent", borderWidth: 1.5, borderColor: color.lineStrong },
         kind === "danger" && { backgroundColor: pressed ? "rgba(255,138,128,0.2)" : color.dangerSoft },
@@ -172,7 +185,7 @@ export function Button({
     >
       {busy ? <ActivityIndicator color={ink} /> : icon ? <Icon name={icon} tint={ink} size={19} /> : null}
       <Text style={[type.button, { color: ink }, kind === "ghost" && { fontFamily: type.heading.fontFamily, fontSize: 15.5 }]}>{label}</Text>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -190,7 +203,7 @@ export function Card({ children, style, tone }: { children: ReactNode; style?: V
 
 export function Status({ state, label, detail }: { state: "done" | "doing" | "todo" | "warn" | "fail"; label: string; detail?: string }) {
   const icon =
-    state === "done" ? <View style={[s.statusBadge, { backgroundColor: color.ok }]}><Icon name="check" tint={color.accentInk} size={13} /></View> :
+    state === "done" ? <Animated.View entering={TICK} style={[s.statusBadge, { backgroundColor: color.ok }]}><Icon name="check" tint={color.accentInk} size={13} /></Animated.View> :
     state === "doing" ? <ActivityIndicator color={color.text} size="small" /> :
     state === "warn" ? <Icon name="alert" tint={color.warn} size={20} /> :
     state === "fail" ? <Icon name="alert" tint={color.danger} size={20} /> :
@@ -208,34 +221,34 @@ export function Status({ state, label, detail }: { state: "done" | "doing" | "to
 
 export function CheckRow({ checked, onToggle, title, detail, note }: { checked: boolean; onToggle: () => void; title: string; detail?: string; note?: string }) {
   return (
-    <Pressable onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel={title} style={({ pressed }) => [s.checkRow, web.press, pressed && { backgroundColor: color.surfacePressed }]}>
-      <View style={[s.box, web.press, checked && { backgroundColor: color.accent, borderColor: color.accent }]}>
-        {checked ? <Icon name="check" tint={color.accentInk} size={15} /> : null}
-      </View>
+    <Press onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel={title} style={({ pressed }) => [s.checkRow, pressed && { backgroundColor: color.surfacePressed }]}>
+      <Animated.View style={[s.box, stateTransition, checked && { backgroundColor: color.accent, borderColor: color.accent }]}>
+        {checked ? <Animated.View entering={DOT}><Icon name="check" tint={color.accentInk} size={15} /></Animated.View> : null}
+      </Animated.View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={type.body}>{title}</Text>
         {note ? <Text style={type.small}>{note}</Text> : null}
         {detail ? <Text style={type.mono}>{detail}</Text> : null}
       </View>
-    </Pressable>
+    </Press>
   );
 }
 
 export function Choice({ selected, onPress, title, detail }: { selected: boolean; onPress: () => void; title: string; detail?: string }) {
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={title}
-      style={({ pressed }) => [s.choice, web.press, selected && s.choiceOn, pressed && { transform: [{ scale: 0.985 }] }]}
+      style={({ pressed }) => [s.choice, selected && s.choiceOn, pressed && { transform: [{ scale: 0.985 }] }]}
     >
-      <View style={[s.radio, web.press, selected && { borderColor: color.accent }]}>{selected ? <View style={s.radioDot} /> : null}</View>
+      <Animated.View style={[s.radio, stateTransition, selected && { borderColor: color.accent }]}>{selected ? <Animated.View entering={DOT} style={s.radioDot} /> : null}</Animated.View>
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={type.heading}>{title}</Text>
         {detail ? <Text style={type.small}>{detail}</Text> : null}
       </View>
-    </Pressable>
+    </Press>
   );
 }
 
@@ -253,7 +266,7 @@ export function Section({ title, hint, children }: { title: string; hint?: strin
 /** One row of a group: icon, name, what it does, and where it goes. Feedback on press-in. */
 export function Row({ icon, title, detail, onPress, last, tint }: { icon: IconName; title: string; detail?: string; onPress: () => void; last?: boolean; tint?: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityHint={detail} style={({ pressed }) => [s.row, web.press, pressed && { backgroundColor: color.surfacePressed }]}>
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityHint={detail} style={({ pressed }) => [s.row, pressed && { backgroundColor: color.surfacePressed }]}>
       <View style={[s.rowIcon, tint ? { borderColor: tint } : null]}>
         <Icon name={icon} tint={tint ?? color.text} size={19} />
       </View>
@@ -264,7 +277,7 @@ export function Row({ icon, title, detail, onPress, last, tint }: { icon: IconNa
         </View>
         <Icon name="chevron" tint={color.faint} size={17} />
       </View>
-    </Pressable>
+    </Press>
   );
 }
 

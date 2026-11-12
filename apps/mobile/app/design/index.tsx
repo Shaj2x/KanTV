@@ -2,8 +2,9 @@
 // Designs come from the AI designer on KanTV's server; after the free week this sends people to the paywall.
 import { router, useFocusEffect } from "expo-router";
 import { useEffect, useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import Animated, { Easing, FadeInDown, ReduceMotion } from "react-native-reanimated";
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { EASE_OUT, duration, reduce, thud, tick } from "../../src/motion";
 import { COMMON_APPS } from "../../src/apps";
 import { useRequireSignIn } from "../../src/auth";
 import { success } from "../../src/feedback";
@@ -11,7 +12,8 @@ import { platform, type Design, type DesignFailure, type Entitlement } from "../
 import { useSession } from "../../src/session";
 import { color, radius, space, type, web } from "../../src/theme";
 import { Button, Card, CheckRow, Screen, useWide } from "../../src/ui/kit";
-import { LitTv, setAmbient } from "../../src/ui/ambient";
+import { LitTv, Tuning, glowOf, setAmbient, useAmbient } from "../../src/ui/ambient";
+import { Press } from "../../src/ui/Press";
 
 const IDEAS = ["Dark and minimal, big clock, Netflix and YouTube in the dock, warm colours", "Like a cosy cabin in the woods", "A home cinema feel", "Calm and simple for my parents", "Neon and playful"];
 
@@ -34,6 +36,7 @@ export default function DesignStudio() {
   const [busy, setBusy] = useState<"design" | "again" | "apply" | null>(null);
   const [design, setDesign] = useState<Design | null>(null);
   const wide = useWide();
+  const ambient = useAmbient();
   useEffect(() => {
     if (design) setAmbient(design.spec);
   }, [design]);
@@ -47,7 +50,7 @@ export default function DesignStudio() {
   );
 
   const handle = (r: Design | DesignFailure) => {
-    if (typeof r !== "string") return setDesign(r);
+    if (typeof r !== "string") return (thud(), setDesign(r));
     if (r === "subscription-required") return router.push("/paywall");
     setError(FAILURE[r]);
   };
@@ -86,21 +89,22 @@ export default function DesignStudio() {
         placeholder="Dark and minimal, a big clock, Netflix first…"
         placeholderTextColor={color.faint}
         multiline
-        style={[s.input, web.press]}
+        style={s.input}
         accessibilityLabel="Describe your home screen"
       />
       <View style={s.ideas}>
         {IDEAS.map((idea) => (
-          <Pressable
+          <Press
             key={idea}
-            onPress={() => setRequest(idea)}
-            style={({ pressed }) => [s.idea, web.press, request === idea && s.ideaOn, pressed && { transform: [{ scale: 0.96 }] }]}
+            onPress={() => (tick(), setRequest(idea))}
+            frame={{ maxWidth: "100%" }}
+            style={({ pressed }) => [s.idea, request === idea && s.ideaOn, pressed && { transform: [{ scale: 0.96 }] }]}
             accessibilityRole="button"
           >
             <Text style={[type.small, { color: request === idea ? color.accent : color.text }]} numberOfLines={1}>
               {idea}
             </Text>
-          </Pressable>
+          </Press>
         ))}
       </View>
       <View style={s.option}>
@@ -126,6 +130,7 @@ export default function DesignStudio() {
       {busy === "design" || busy === "again" ? (
         <LitTv intensity={0.45}>
           <View style={s.designing}>
+            <Tuning glow={glowOf(ambient)} />
             <ActivityIndicator color={color.accent} />
             <Text style={type.small}>{busy === "again" ? "Trying a different take…" : "Designing your home screen…"}</Text>
           </View>
@@ -178,7 +183,7 @@ export default function DesignStudio() {
 }
 
 // The new design arrives: a short rise and fade, so the eye goes to it. Gentler with Reduce Motion.
-const REVEAL = FadeInDown.duration(260).easing(Easing.bezier(0.23, 1, 0.32, 1)).reduceMotion(ReduceMotion.System);
+const REVEAL = FadeInDown.duration(duration.enter).easing(EASE_OUT).reduceMotion(reduce);
 
 const s = StyleSheet.create({
   input: { minHeight: 110, backgroundColor: color.surface, color: color.text, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, padding: space(4), fontSize: 17, lineHeight: 24, textAlignVertical: "top" },
@@ -186,5 +191,5 @@ const s = StyleSheet.create({
   idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), paddingVertical: space(2), maxWidth: "100%" },
   ideaOn: { borderColor: color.accentLine, backgroundColor: color.accentSoft },
   option: { backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
-  designing: { aspectRatio: 16 / 9, borderRadius: 10, borderWidth: 5, borderColor: "#050506", backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3) },
+  designing: { aspectRatio: 16 / 9, borderRadius: 10, borderWidth: 5, borderColor: "#050506", backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3), overflow: "hidden" },
 });

@@ -11,6 +11,7 @@ import { useSession } from "../../src/session";
 import { success } from "../../src/feedback";
 import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, Screen, Status } from "../../src/ui/kit";
+import { Celebrate } from "../../src/ui/ambient";
 
 type Stage = "record" | "disable" | "verify" | "settle" | "done" | "failed";
 const order: Stage[] = ["record", "disable", "verify", "settle", "done"];
@@ -95,7 +96,8 @@ export default function Run() {
       ) : null}
       {stage === "done" && r ? (
         <>
-          <Card tone="ok">
+          <Card tone="ok" style={{ gap: space(3) }}>
+            <Celebrate />
             <Text style={type.title}>{r.disabled.length} apps turned off</Text>
             <Text style={type.small}>Saved a restore point for this TV.</Text>
           </Card>

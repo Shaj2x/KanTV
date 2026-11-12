@@ -86,7 +86,4 @@ export const type = {
 /** Web-only style extras React Native ignores elsewhere (blur behind chrome, smooth press feedback). */
 export const web = {
   material: Platform.OS === "web" ? ({ backdropFilter: "blur(20px) saturate(160%)", WebkitBackdropFilter: "blur(20px) saturate(160%)" } as object) : {},
-  press: Platform.OS === "web" ? ({ transitionProperty: "transform, background-color, border-color, opacity", transitionDuration: "140ms", transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)" } as object) : {},
-  // The glow changes colour when a new design arrives: a slow crossfade, like a picture changing.
-  glow: Platform.OS === "web" ? ({ transitionProperty: "opacity", transitionDuration: "600ms", transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)" } as object) : {},
 };

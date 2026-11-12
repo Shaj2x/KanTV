@@ -2,12 +2,13 @@
 // moment they subscribe.
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useRequireSignIn } from "../../src/auth";
 import { platform, type Design } from "../../src/platform";
 import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, Screen } from "../../src/ui/kit";
 import { ThemePreview } from "../../src/ui/ThemePreview";
+import { Press } from "../../src/ui/Press";
 
 export default function Saved() {
   const ok = useRequireSignIn("/design/saved");
@@ -35,14 +36,14 @@ export default function Saved() {
         </Card>
       ) : null}
       {designs?.map((d) => (
-        <Pressable key={d.id} onPress={() => (d.locked ? router.push("/paywall") : undefined)} style={{ gap: space(2), opacity: d.locked ? 0.6 : 1 }} accessibilityRole="button">
+        <Press key={d.id} onPress={() => (d.locked ? router.push("/paywall") : undefined)} style={{ gap: space(2), opacity: d.locked ? 0.6 : 1 }} accessibilityRole="button">
           <ThemePreview spec={d.spec} />
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text style={type.heading}>{d.name}</Text>
             {d.locked ? <Text style={{ ...type.tiny, color: color.warn, backgroundColor: color.warnSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill }}>Paused</Text> : null}
           </View>
           <Text style={type.small}>“{d.request}”</Text>
-        </Pressable>
+        </Press>
       ))}
     </Screen>
   );

@@ -2,21 +2,23 @@
 // protocol, which keeps working after debugging is switched off; pairing asks for the code the TV shows.
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type RemoteKeys } from "../src/platform";
 import { demoRemoteLog } from "../src/platform/demo";
 import { useSession } from "../src/session";
 import { color, radius, space, type, web } from "../src/theme";
 import { Icon, type IconName } from "../src/ui/Icon";
 import { Button, Screen, Section } from "../src/ui/kit";
+import { Press } from "../src/ui/Press";
+import { tick } from "../src/motion";
 
 type Key = Parameters<RemoteKeys["key"]>[0];
 
 function Key({ icon, label, onPress, size = 60, tint }: { icon: IconName; label: string; onPress: () => void; size?: number; tint?: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, web.press, { width: size, height: size, borderRadius: size / 2 }, pressed && s.keyOn]}>
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, { width: size, height: size, borderRadius: size / 2 }, pressed && s.keyOn]}>
       <Icon name={icon} size={size > 50 ? 22 : 18} tint={tint} />
-    </Pressable>
+    </Press>
   );
 }
 
@@ -46,6 +48,7 @@ export default function Remote() {
   }
 
   const press = (k: Key) => {
+    tick();
     void remote?.key(k);
     setLast(platform.mode === "demo" ? demoRemoteLog[0] ?? k : k);
   };
@@ -69,21 +72,21 @@ export default function Remote() {
         </View>
 
         <View style={s.pad}>
-          <Pressable onPress={() => press("UP")} accessibilityLabel="Up" style={({ pressed }) => [s.arrow, s.up, pressed && s.arrowOn]}>
+          <Press onPress={() => press("UP")} accessibilityLabel="Up" frame={s.up} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
             <Icon name="up" size={26} />
-          </Pressable>
-          <Pressable onPress={() => press("LEFT")} accessibilityLabel="Left" style={({ pressed }) => [s.arrow, s.left, pressed && s.arrowOn]}>
+          </Press>
+          <Press onPress={() => press("LEFT")} accessibilityLabel="Left" frame={s.left} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
             <Icon name="left" size={26} />
-          </Pressable>
-          <Pressable onPress={() => press("OK")} accessibilityLabel="OK" style={({ pressed }) => [s.ok, web.press, pressed && s.okOn]}>
+          </Press>
+          <Press onPress={() => press("OK")} accessibilityLabel="OK" frame={s.okFrame} style={({ pressed }) => [s.ok, pressed && s.okOn]}>
             <Text style={s.okText}>OK</Text>
-          </Pressable>
-          <Pressable onPress={() => press("RIGHT")} accessibilityLabel="Right" style={({ pressed }) => [s.arrow, s.right, pressed && s.arrowOn]}>
+          </Press>
+          <Press onPress={() => press("RIGHT")} accessibilityLabel="Right" frame={s.right} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
             <Icon name="right" size={26} />
-          </Pressable>
-          <Pressable onPress={() => press("DOWN")} accessibilityLabel="Down" style={({ pressed }) => [s.arrow, s.down, pressed && s.arrowOn]}>
+          </Press>
+          <Press onPress={() => press("DOWN")} accessibilityLabel="Down" frame={s.down} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
             <Icon name="down" size={26} />
-          </Pressable>
+          </Press>
         </View>
 
         <View style={s.row}>
@@ -93,13 +96,13 @@ export default function Remote() {
         </View>
 
         <View style={s.rocker}>
-          <Pressable onPress={() => press("VOLUME_DOWN")} accessibilityLabel="Volume down" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
+          <Press onPress={() => press("VOLUME_DOWN")} accessibilityLabel="Volume down" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
             <Icon name="volDown" size={22} />
-          </Pressable>
+          </Press>
           <Text style={s.rockerLabel}>Volume</Text>
-          <Pressable onPress={() => press("VOLUME_UP")} accessibilityLabel="Volume up" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
+          <Press onPress={() => press("VOLUME_UP")} accessibilityLabel="Volume up" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
             <Icon name="volUp" size={22} />
-          </Pressable>
+          </Press>
         </View>
         {platform.mode === "demo" ? <Text style={[type.tiny, { textAlign: "center", minHeight: 17 }]}>{last ? `Preview: would send ${last}` : " "}</Text> : null}
       </View>
@@ -120,13 +123,14 @@ const s = StyleSheet.create({
   led: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.line, marginLeft: space(4) },
   ledOn: { flex: 1, borderRadius: 4, backgroundColor: color.ok, boxShadow: "0 0 8px 2px rgba(111,227,180,0.6)" } as object,
   pad: { width: 220, height: 220, alignSelf: "center", borderRadius: 110, backgroundColor: color.surfaceRaised, borderWidth: 1, borderColor: color.line },
-  arrow: { position: "absolute", width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
+  arrow: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
   arrowOn: { backgroundColor: color.accentSoft },
-  up: { top: 2, left: 77 },
-  down: { bottom: 2, left: 77 },
-  left: { left: 2, top: 77 },
-  right: { right: 2, top: 77 },
-  ok: { position: "absolute", top: 64, left: 64, width: 90, height: 90, borderRadius: 45, backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.lineStrong },
+  up: { position: "absolute", top: 2, left: 77 },
+  down: { position: "absolute", bottom: 2, left: 77 },
+  left: { position: "absolute", left: 2, top: 77 },
+  right: { position: "absolute", right: 2, top: 77 },
+  okFrame: { position: "absolute", top: 64, left: 64 },
+  ok: { width: 90, height: 90, borderRadius: 45, backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.lineStrong },
   okOn: { backgroundColor: color.accent, transform: [{ scale: 0.96 }] },
   okText: { ...type.title, fontSize: 17 },
   row: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: space(2) },
