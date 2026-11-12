@@ -39,7 +39,7 @@ export default function Home() {
     <Screen
       back={false}
       hero={!wide ? <LitTv style={{ marginTop: space(3), marginBottom: space(7) }} /> : undefined}
-      title={done ? session.tv?.name ?? "Your TV" : "Take back your TV"}
+      title={done ? session.tv?.name ?? "Your TV" : "Ad-free home screen for your TV"}
       subtitle={done ? undefined : "Turn off the ads and the bloat, put a home screen you designed on it, and run it all from this phone."}
     >
       {!done ? (
@@ -56,7 +56,7 @@ export default function Home() {
       )}
 
       <View style={{ marginTop: space(4) }}>
-        <Section title="INDEX">
+        <Section title="Index">
           {done ? null : <Row title="Set up my TV" page={200} tone={tt.cyan} detail="Clean it up, step by step" onPress={() => router.push("/setup")} />}
           <Row title="Design" page={300} tone={tt.magenta} detail="Describe a look; AI builds your TV's home screen" onPress={() => router.push("/design")} />
           <Row title="Remote" page={400} tone={tt.blue} detail="Arrows, volume and typing from your phone" onPress={() => router.push("/remote")} />

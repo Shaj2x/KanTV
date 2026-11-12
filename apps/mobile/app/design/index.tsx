@@ -141,7 +141,6 @@ export default function DesignStudio() {
           {/* On wide screens the stage beside the column already shows it, lit, at full size. */}
           {!wide ? <LitTv spec={design.spec} style={{ marginVertical: space(2) }} /> : null}
           {design.fixes.length ? <Text style={type.tiny}>Adjusted for your TV: {design.fixes.join("; ").toLowerCase()}.</Text> : null}
-          {!platform.designer.live ? <Text style={type.tiny}>This preview cycles through sample designs. The real app designs a new one from your words every time.</Text> : null}
         </Animated.View>
       ) : null}
 

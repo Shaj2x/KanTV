@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
   const see = (text, timeout = 15000) => page.getByText(text, { exact: false }).filter({ visible: true }).first().waitFor({ timeout });
   try {
     await page.goto(`http://127.0.0.1:${port}/`);
-    await see("Take back your TV"); await shot("home");
+    await see("Ad-free home screen for your TV"); await shot("home");
     await tap("Set up my TV"); await see("Which home screen"); await shot("tv-family");
     await tap("Google TV"); await see("Find the build number"); await shot("dev-mode-1");
     await tap("Next"); await see("Turn on USB debugging"); await shot("dev-mode-2");

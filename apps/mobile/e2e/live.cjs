@@ -56,10 +56,10 @@ const server = http.createServer((req, res) => {
   };
   try {
     await page.goto(`http://localhost:${PORT}/`);
-    await see("Take back your TV"); await see("Sign in"); await shot("home-signed-out");
+    await see("Ad-free home screen for your TV"); await see("Sign in"); await shot("home-signed-out");
     // Account features send a signed-out person to sign in, then back; also on a cold start straight onto one.
     await page.goto(`http://localhost:${PORT}/account`); await see("Sign in to KanTV");
-    await page.goto(`http://localhost:${PORT}/`); await see("Take back your TV");
+    await page.goto(`http://localhost:${PORT}/`); await see("Ad-free home screen for your TV");
     await tap("Design"); await see("Sign in to KanTV"); await shot("signin-email");
     await page.getByLabel("Email").fill("not-an-email"); await tap("Email me a code"); await see("doesn't look like an email");
     await page.getByLabel("Email").fill(email); await tap("Email me a code"); await see("Check your email"); await shot("signin-code");
@@ -75,7 +75,7 @@ const server = http.createServer((req, res) => {
     await see("Couldn't reach KanTV"); await shot("design-no-ai");
     await page.goto(`http://localhost:${PORT}/account`); await see("Free trial, until"); await shot("account");
     await tap("Delete my account"); await see("can't be undone"); await tap("Yes, delete everything");
-    await see("Take back your TV"); await see("Sign in"); await shot("home-after-delete");
+    await see("Ad-free home screen for your TV"); await see("Sign in"); await shot("home-after-delete");
     // A new account on the same TV gets no second free week: the TV's history outlives the deleted account.
     email = `e2e-second-${Date.now()}@example.com`;
     await tap("Sign in"); await see("Sign in to KanTV"); await signIn(); await see(`Account: ${email}`);

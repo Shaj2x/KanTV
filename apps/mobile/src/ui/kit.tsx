@@ -46,10 +46,10 @@ function Clock() {
   return <Text style={s.headerText}>{t}</Text>;
 }
 
-/** "THU 12 NOV", as at the top of a teletext page. */
+/** "Thu 12 Nov", as at the top of a teletext page. */
 function today() {
   const d = new Date();
-  return `${["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()]} ${d.getDate()} ${["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][d.getMonth()]}`;
+  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()]}`;
 }
 
 /** A blinking block: something is happening. Steady with Reduce Motion. */
@@ -71,7 +71,7 @@ export function DemoBanner() {
   if (platform.mode !== "demo") return null;
   return (
     <View style={s.demo} accessibilityRole="text" accessibilityLabel="Preview mode: a simulated TV. Nothing here talks to a real TV.">
-      <Text style={s.demoText}>DEMO TV</Text>
+      <Text style={s.demoText}>Demo TV</Text>
     </View>
   );
 }
@@ -84,7 +84,7 @@ function Progress({ step, ink }: { step: string; ink: string }) {
   const of = Number(m[2]);
   return (
     <View style={s.progress} accessibilityRole="progressbar" accessibilityLabel={`Step ${at} of ${of}`} accessibilityValue={{ min: 0, max: of, now: at }}>
-      <Text style={[s.bandMeta, { color: ink }]}>{`STEP ${at}/${of}`}</Text>
+      <Text style={[s.bandMeta, { color: ink }]}>{`Step ${at} of ${of}`}</Text>
       <View style={s.blocks}>
         {Array.from({ length: of }, (_, i) => (
           <Animated.View key={i} style={[s.block, stateTransition, { borderColor: ink }, i < at && { backgroundColor: ink }]} />
@@ -104,7 +104,7 @@ function Stage({ children }: { children?: ReactNode }) {
           <>
             <LitTv spec={spec} />
             <Text style={[type.pixel, { textAlign: "center", marginTop: space(8), color: color.muted }]}>
-              NOW ON YOUR TV: <Text style={{ color: tt.yellow }}>{spec.name.toUpperCase()}</Text>
+              On your TV: <Text style={{ color: tt.yellow }}>{spec.name}</Text>
             </Text>
           </>
         )}
@@ -163,7 +163,7 @@ export function Screen({
         {hero}
         {title ? (
           <View style={[s.band, { backgroundColor: page.tone }]}>
-            {step ? <Progress step={step} ink={color.accentInk} /> : <Text style={[s.bandMeta, { color: color.accentInk }]}>{page.number === 100 ? today() : page.name.toUpperCase()}</Text>}
+            {step ? <Progress step={step} ink={color.accentInk} /> : <Text style={[s.bandMeta, { color: color.accentInk }]}>{page.number === 100 ? today() : page.name}</Text>}
             <Text style={[type.display, s.bandTitle]} accessibilityRole="header">
               {title}
             </Text>
