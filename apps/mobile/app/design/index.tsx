@@ -1,7 +1,7 @@
 // The design studio: describe the look, see it on a TV-shaped preview, try another take, put it on the TV.
 // Designs come from the AI designer on KanTV's server; after the free week this sends people to the paywall.
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Animated, { Easing, FadeInDown, ReduceMotion } from "react-native-reanimated";
 import { COMMON_APPS } from "../../src/apps";
@@ -10,8 +10,8 @@ import { success } from "../../src/feedback";
 import { platform, type Design, type DesignFailure, type Entitlement } from "../../src/platform";
 import { useSession } from "../../src/session";
 import { color, radius, space, type, web } from "../../src/theme";
-import { Button, Card, CheckRow, Screen } from "../../src/ui/kit";
-import { ThemePreview } from "../../src/ui/ThemePreview";
+import { Button, Card, CheckRow, Screen, useWide } from "../../src/ui/kit";
+import { LitTv, setAmbient } from "../../src/ui/ambient";
 
 const IDEAS = ["Dark and minimal, big clock, Netflix and YouTube in the dock, warm colours", "Like a cosy cabin in the woods", "A home cinema feel", "Calm and simple for my parents", "Neon and playful"];
 
@@ -33,6 +33,10 @@ export default function DesignStudio() {
   const [exact, setExact] = useState(false);
   const [busy, setBusy] = useState<"design" | "again" | "apply" | null>(null);
   const [design, setDesign] = useState<Design | null>(null);
+  const wide = useWide();
+  useEffect(() => {
+    if (design) setAmbient(design.spec);
+  }, [design]);
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState<number | null>(null);
   const [ent, setEnt] = useState<Entitlement | null>(null);
@@ -120,23 +124,19 @@ export default function DesignStudio() {
       ) : null}
 
       {busy === "design" || busy === "again" ? (
-        <View style={s.tvFrame}>
+        <LitTv intensity={0.45}>
           <View style={s.designing}>
             <ActivityIndicator color={color.accent} />
             <Text style={type.small}>{busy === "again" ? "Trying a different take…" : "Designing your home screen…"}</Text>
           </View>
-        </View>
+        </LitTv>
       ) : design ? (
         // The result is the point of this screen: it comes first, then what to do with it.
         <Animated.View key={design.id} entering={REVEAL} style={{ gap: space(3) }}>
-          <View>
-            <View style={s.tvFrame}>
-              <ThemePreview spec={design.spec} />
-            </View>
-            <View style={s.tvStand} />
-          </View>
+          {/* On wide screens the stage beside the column already shows it, lit, at full size. */}
+          {!wide ? <LitTv spec={design.spec} style={{ marginVertical: space(2) }} /> : null}
           {design.fixes.length ? <Text style={type.tiny}>Adjusted for your TV: {design.fixes.join("; ").toLowerCase()}.</Text> : null}
-          {!platform.designer.live ? <Text style={[type.tiny, { color: color.accent }]}>Preview: a sample design. Real designs are made by the AI designer on KanTV's server.</Text> : null}
+          {!platform.designer.live ? <Text style={type.tiny}>This preview cycles through sample designs. The real app designs a new one from your words every time.</Text> : null}
         </Animated.View>
       ) : null}
 
@@ -166,7 +166,7 @@ export default function DesignStudio() {
 
       {design ? (
         <View style={{ gap: space(3), marginTop: space(4) }}>
-          <Text style={[type.label, { marginLeft: space(1) }]}>Describe a different look</Text>
+          <Text style={type.label}>Describe a different look</Text>
           {describe}
         </View>
       ) : (
@@ -186,7 +186,5 @@ const s = StyleSheet.create({
   idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), paddingVertical: space(2), maxWidth: "100%" },
   ideaOn: { borderColor: color.accentLine, backgroundColor: color.accentSoft },
   option: { backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
-  tvFrame: { padding: 6, backgroundColor: color.tvBezel, borderRadius: 12, borderWidth: 1, borderColor: color.line },
-  tvStand: { alignSelf: "center", width: "26%", height: 7, backgroundColor: color.tvBezel, borderBottomLeftRadius: 5, borderBottomRightRadius: 5 },
-  designing: { aspectRatio: 16 / 9, borderRadius: 8, backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3) },
+  designing: { aspectRatio: 16 / 9, borderRadius: 10, borderWidth: 5, borderColor: "#050506", backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3) },
 });

@@ -56,29 +56,29 @@ const server = http.createServer((req, res) => {
   };
   try {
     await page.goto(`http://localhost:${PORT}/`);
-    await see("Make your TV yours"); await see("Sign in"); await shot("home-signed-out");
+    await see("Take back your TV"); await see("Sign in"); await shot("home-signed-out");
     // Account features send a signed-out person to sign in, then back; also on a cold start straight onto one.
     await page.goto(`http://localhost:${PORT}/account`); await see("Sign in to KanTV");
-    await page.goto(`http://localhost:${PORT}/`); await see("Make your TV yours");
+    await page.goto(`http://localhost:${PORT}/`); await see("Take back your TV");
     await tap("Design your home screen"); await see("Sign in to KanTV"); await shot("signin-email");
     await page.getByLabel("Email").fill("not-an-email"); await tap("Email me a code"); await see("doesn't look like an email");
     await page.getByLabel("Email").fill(email); await tap("Email me a code"); await see("Check your email"); await shot("signin-code");
     await page.getByLabel("Code from the email").fill("000000"); await tap("Sign in"); await see("That code isn't right");
     await page.getByLabel("Code from the email").fill(await latestCode()); await tap("Sign in");
     await see("Design your home screen"); await shot("design-after-signin");
-    await page.goto(`http://localhost:${PORT}/`); await see(`Account · ${email}`);
+    await page.goto(`http://localhost:${PORT}/`); await see(`Account: ${email}`);
     // Setup registers the TV with the backend: the free week starts.
     await setUpTv();
-    await page.goto(`http://localhost:${PORT}/`); await see("Free trial · 7 days left"); await shot("home-trial");
+    await page.goto(`http://localhost:${PORT}/`); await see("Free trial, 7 days left"); await shot("home-trial");
     // The designer has no model key in this stack: it says so plainly instead of failing.
     await tap("Design your home screen"); await tap("Like a cosy cabin in the woods"); await tap("Design it");
     await see("Couldn't reach KanTV"); await shot("design-no-ai");
     await page.goto(`http://localhost:${PORT}/account`); await see("Free trial, until"); await shot("account");
     await tap("Delete my account"); await see("can't be undone"); await tap("Yes, delete everything");
-    await see("Make your TV yours"); await see("Sign in"); await shot("home-after-delete");
+    await see("Take back your TV"); await see("Sign in"); await shot("home-after-delete");
     // A new account on the same TV gets no second free week: the TV's history outlives the deleted account.
     email = `e2e-second-${Date.now()}@example.com`;
-    await tap("Sign in"); await see("Sign in to KanTV"); await signIn(); await see(`Account · ${email}`);
+    await tap("Sign in"); await see("Sign in to KanTV"); await signIn(); await see(`Account: ${email}`);
     await setUpTv();
     await page.goto(`http://localhost:${PORT}/`); await see("Free trial over"); await shot("second-account-no-trial");
     if (errors.length) throw new Error(`console errors:\n${errors.join("\n")}`);

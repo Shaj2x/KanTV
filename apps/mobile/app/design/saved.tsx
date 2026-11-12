@@ -39,7 +39,7 @@ export default function Saved() {
           <ThemePreview spec={d.spec} />
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text style={type.heading}>{d.name}</Text>
-            {d.locked ? <Text style={{ ...type.tiny, color: color.accent, fontWeight: "700", backgroundColor: color.accentSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill }}>LOCKED</Text> : null}
+            {d.locked ? <Text style={{ ...type.tiny, color: color.warn, backgroundColor: color.warnSoft, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill }}>Paused</Text> : null}
           </View>
           <Text style={type.small}>“{d.request}”</Text>
         </Pressable>

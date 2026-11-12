@@ -86,7 +86,8 @@ function describe(crumb?: string, items?: MenuItem[], highlight?: number, dialog
 
 const s = StyleSheet.create({
   wrap: { alignItems: "center", paddingTop: space(2), paddingBottom: space(1) },
-  tv: { width: "100%", aspectRatio: 16 / 9, backgroundColor: "#050506", borderRadius: radius.sm, padding: 6, borderWidth: 1, borderColor: "#30333B" },
+  // The settings menu's cool light on the wall behind the TV.
+  tv: { width: "100%", aspectRatio: 16 / 9, backgroundColor: "#050506", borderRadius: radius.sm, padding: 6, boxShadow: "0 0 70px 18px rgba(127,140,255,0.16)" } as object,
   screen: { flex: 1, backgroundColor: color.tvScreen, borderRadius: 4, overflow: "hidden", alignItems: "flex-end" },
   panel: { width: "52%", height: "100%", backgroundColor: color.tvPanel, paddingVertical: 8, paddingHorizontal: 8, gap: 3 },
   crumb: { color: color.muted, fontSize: 8, marginBottom: 2 },

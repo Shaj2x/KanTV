@@ -53,7 +53,7 @@ export default function Model() {
           selected={picked === m.item.folder}
           onPress={() => setPicked(m.item.folder)}
           title={m.item.tv}
-          detail={`${m.item.os}${m.item.launcher === "unsupported" ? " · cleanup only, keeps its own home screen" : ""}`}
+          detail={`${m.item.os}${m.item.launcher === "unsupported" ? ". Cleanup only; it keeps its own home screen" : ""}`}
         />
       ))}
       {session.trial === "used-on-this-tv" ? (

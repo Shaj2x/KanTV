@@ -6,16 +6,16 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type RemoteKeys } from "../src/platform";
 import { demoRemoteLog } from "../src/platform/demo";
 import { useSession } from "../src/session";
-import { color, radius, space, type } from "../src/theme";
+import { color, radius, space, type, web } from "../src/theme";
 import { Icon, type IconName } from "../src/ui/Icon";
-import { Button, Card, Screen } from "../src/ui/kit";
+import { Button, Screen, Section } from "../src/ui/kit";
 
 type Key = Parameters<RemoteKeys["key"]>[0];
 
-function Round({ icon, label, onPress, size = 64 }: { icon: IconName; label: string; onPress: () => void; size?: number }) {
+function Key({ icon, label, onPress, size = 60, tint }: { icon: IconName; label: string; onPress: () => void; size?: number; tint?: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [s.round, { width: size, height: size, borderRadius: size / 2 }, pressed && s.pressed]}>
-      <Icon name={icon} size={24} />
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, web.press, { width: size, height: size, borderRadius: size / 2 }, pressed && s.keyOn]}>
+      <Icon name={icon} size={size > 50 ? 22 : 18} tint={tint} />
     </Pressable>
   );
 }
@@ -60,61 +60,81 @@ export default function Remote() {
   }
 
   return (
-    <Screen title={session.tv.name} subtitle={remote ? undefined : "Connecting to the remote…"}>
-      <View style={s.pad}>
-        <Pressable onPress={() => press("UP")} accessibilityLabel="Up" style={[s.arrow, s.up]}>
-          <Icon name="up" size={30} />
-        </Pressable>
-        <Pressable onPress={() => press("LEFT")} accessibilityLabel="Left" style={[s.arrow, s.left]}>
-          <Icon name="left" size={30} />
-        </Pressable>
-        <Pressable onPress={() => press("OK")} accessibilityLabel="OK" style={({ pressed }) => [s.ok, pressed && s.pressed]}>
-          <Text style={s.okText}>OK</Text>
-        </Pressable>
-        <Pressable onPress={() => press("RIGHT")} accessibilityLabel="Right" style={[s.arrow, s.right]}>
-          <Icon name="right" size={30} />
-        </Pressable>
-        <Pressable onPress={() => press("DOWN")} accessibilityLabel="Down" style={[s.arrow, s.down]}>
-          <Icon name="down" size={30} />
-        </Pressable>
+    <Screen title={session.tv.name} subtitle={remote ? "Connected. Point it anywhere: it works over Wi-Fi." : "Connecting to the remote…"}>
+      {/* Shaped like the remote in your hand: power at the top, the ring in the middle, volume below. */}
+      <View style={s.body}>
+        <View style={s.topRow}>
+          <View style={s.led}>{remote ? <View style={s.ledOn} /> : null}</View>
+          <Key icon="power" label="Power" onPress={() => press("POWER")} size={44} tint={color.danger} />
+        </View>
+
+        <View style={s.pad}>
+          <Pressable onPress={() => press("UP")} accessibilityLabel="Up" style={({ pressed }) => [s.arrow, s.up, pressed && s.arrowOn]}>
+            <Icon name="up" size={26} />
+          </Pressable>
+          <Pressable onPress={() => press("LEFT")} accessibilityLabel="Left" style={({ pressed }) => [s.arrow, s.left, pressed && s.arrowOn]}>
+            <Icon name="left" size={26} />
+          </Pressable>
+          <Pressable onPress={() => press("OK")} accessibilityLabel="OK" style={({ pressed }) => [s.ok, web.press, pressed && s.okOn]}>
+            <Text style={s.okText}>OK</Text>
+          </Pressable>
+          <Pressable onPress={() => press("RIGHT")} accessibilityLabel="Right" style={({ pressed }) => [s.arrow, s.right, pressed && s.arrowOn]}>
+            <Icon name="right" size={26} />
+          </Pressable>
+          <Pressable onPress={() => press("DOWN")} accessibilityLabel="Down" style={({ pressed }) => [s.arrow, s.down, pressed && s.arrowOn]}>
+            <Icon name="down" size={26} />
+          </Pressable>
+        </View>
+
+        <View style={s.row}>
+          <Key icon="back" label="Back" onPress={() => press("BACK")} />
+          <Key icon="home" label="Home" onPress={() => press("HOME")} />
+          <Key icon="mute" label="Mute" onPress={() => press("MUTE")} />
+        </View>
+
+        <View style={s.rocker}>
+          <Pressable onPress={() => press("VOLUME_DOWN")} accessibilityLabel="Volume down" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
+            <Icon name="volDown" size={22} />
+          </Pressable>
+          <Text style={s.rockerLabel}>Volume</Text>
+          <Pressable onPress={() => press("VOLUME_UP")} accessibilityLabel="Volume up" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
+            <Icon name="volUp" size={22} />
+          </Pressable>
+        </View>
+        {platform.mode === "demo" ? <Text style={[type.tiny, { textAlign: "center", minHeight: 17 }]}>{last ? `Preview: would send ${last}` : " "}</Text> : null}
       </View>
 
-      <View style={s.row}>
-        <Round icon="back" label="Back" onPress={() => press("BACK")} />
-        <Round icon="home" label="Home" onPress={() => press("HOME")} />
-        <Round icon="power" label="Power" onPress={() => press("POWER")} />
-      </View>
-      <View style={s.row}>
-        <Round icon="volDown" label="Volume down" onPress={() => press("VOLUME_DOWN")} />
-        <Round icon="mute" label="Mute" onPress={() => press("MUTE")} />
-        <Round icon="volUp" label="Volume up" onPress={() => press("VOLUME_UP")} />
-      </View>
-
-      <Card style={{ gap: space(3) }}>
-        <Text style={type.heading}>Type on the TV</Text>
-        <View style={{ flexDirection: "row", gap: space(2) }}>
-          <TextInput value={text} onChangeText={setText} placeholder="Search, passwords…" placeholderTextColor={color.faint} style={[s.input, { flex: 1 }]} onSubmitEditing={() => text && (void remote?.text(text), setLast(`“${text}”`), setText(""))} />
+      <Section title="Type on the TV" hint="Works when a text box is open on the TV: search, passwords, Wi-Fi names.">
+        <View style={{ flexDirection: "row", gap: space(2), padding: space(3), alignItems: "center" }}>
+          <TextInput value={text} onChangeText={setText} placeholder="Type here" placeholderTextColor={color.faint} style={[s.input, { flex: 1 }]} onSubmitEditing={() => text && (void remote?.text(text), setLast(`“${text}”`), setText(""))} />
           <Button label="Send" kind="secondary" disabled={!text} onPress={() => (void remote?.text(text), setLast(`“${text}”`), setText(""))} />
         </View>
-        <Text style={type.tiny}>Works when a text box is open on the TV.</Text>
-      </Card>
-      {platform.mode === "demo" && last ? <Text style={[type.tiny, { textAlign: "center" }]}>Preview: would send {last}</Text> : null}
+      </Section>
     </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  pad: { width: 248, height: 248, alignSelf: "center", borderRadius: 124, backgroundColor: color.surface, marginTop: space(2) },
-  arrow: { position: "absolute", width: 72, height: 72, alignItems: "center", justifyContent: "center" },
-  up: { top: 4, left: 88 },
-  down: { bottom: 4, left: 88 },
-  left: { left: 4, top: 88 },
-  right: { right: 4, top: 88 },
-  ok: { position: "absolute", top: 74, left: 74, width: 100, height: 100, borderRadius: 50, backgroundColor: color.surfaceRaised, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.line },
-  okText: { ...type.heading, fontSize: 20 },
-  pressed: { backgroundColor: color.accentSoft },
-  row: { flexDirection: "row", justifyContent: "space-evenly" },
-  round: { backgroundColor: color.surface, alignItems: "center", justifyContent: "center" },
-  input: { minWidth: 0, backgroundColor: color.bg, color: color.text, borderRadius: radius.sm, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), height: 54, fontSize: 16 },
-  code: { backgroundColor: color.surface, color: color.text, borderRadius: radius.md, height: 72, fontSize: 34, letterSpacing: 10, textAlign: "center", fontWeight: "700" },
+  body: { alignSelf: "center", width: "100%", maxWidth: 300, paddingVertical: space(6), paddingHorizontal: space(5), gap: space(6), borderRadius: 48, backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, boxShadow: "0 30px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" } as object,
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  led: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.line, marginLeft: space(4) },
+  ledOn: { flex: 1, borderRadius: 4, backgroundColor: color.ok, boxShadow: "0 0 8px 2px rgba(111,227,180,0.6)" } as object,
+  pad: { width: 220, height: 220, alignSelf: "center", borderRadius: 110, backgroundColor: color.surfaceRaised, borderWidth: 1, borderColor: color.line },
+  arrow: { position: "absolute", width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
+  arrowOn: { backgroundColor: color.accentSoft },
+  up: { top: 2, left: 77 },
+  down: { bottom: 2, left: 77 },
+  left: { left: 2, top: 77 },
+  right: { right: 2, top: 77 },
+  ok: { position: "absolute", top: 64, left: 64, width: 90, height: 90, borderRadius: 45, backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.lineStrong },
+  okOn: { backgroundColor: color.accent, transform: [{ scale: 0.96 }] },
+  okText: { ...type.title, fontSize: 17 },
+  row: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: space(2) },
+  key: { backgroundColor: color.surfaceRaised, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.line },
+  keyOn: { backgroundColor: color.surfacePressed, transform: [{ scale: 0.94 }] },
+  rocker: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 60, borderRadius: 30, backgroundColor: color.surfaceRaised, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
+  rockerHalf: { width: 76, height: "100%", alignItems: "center", justifyContent: "center" },
+  rockerLabel: { ...type.tiny, color: color.muted },
+  input: { minWidth: 0, backgroundColor: color.bg, color: color.text, borderRadius: radius.md, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(4), height: 56, fontSize: 16, fontFamily: type.body.fontFamily },
+  code: { backgroundColor: color.surface, color: color.text, borderRadius: radius.md, height: 72, fontSize: 30, letterSpacing: 10, textAlign: "center", fontFamily: type.display.fontFamily },
 });

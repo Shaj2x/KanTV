@@ -63,8 +63,8 @@ export default function Paywall() {
           key={p.id}
           selected={pick === p.id}
           onPress={() => setPick(p.id)}
-          title={`${p.id === "monthly" ? "Monthly" : "Yearly"} · ${p.price}`}
-          detail={p.id === "yearly" ? `${p.perMonth} a month${p.note ? ` · ${p.note}` : ""}` : "Cancel any time"}
+          title={`${p.id === "monthly" ? "Monthly" : "Yearly"}, ${p.price}`}
+          detail={p.id === "yearly" ? `Works out at ${p.perMonth} a month.${p.note ? ` ${p.note}.` : ""}` : "Cancel any time."}
         />
       ))}
       {note ? <Text style={[type.small, { color: color.text }]}>{note}</Text> : null}

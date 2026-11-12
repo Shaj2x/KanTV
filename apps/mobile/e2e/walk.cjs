@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
   const see = (text, timeout = 15000) => page.getByText(text, { exact: false }).filter({ visible: true }).first().waitFor({ timeout });
   try {
     await page.goto(`http://127.0.0.1:${port}/`);
-    await see("Make your TV yours"); await shot("home");
+    await see("Take back your TV"); await shot("home");
     await tap("Set up my TV"); await see("Which home screen"); await shot("tv-family");
     await tap("Google TV"); await see("Find the build number"); await shot("dev-mode-1");
     await tap("Next"); await see("Turn on USB debugging"); await shot("dev-mode-2");
@@ -67,7 +67,7 @@ const server = http.createServer((req, res) => {
     await tap("See plans"); await see("Keep your TV looking yours"); await shot("paywall");
     await tap("Subscribe monthly"); await see("Your designs are safe", 15000).catch(() => {});
     await page.waitForTimeout(800);
-    if (await page.getByText("LOCKED").filter({ visible: true }).count()) {
+    if (await page.getByText("Paused", { exact: true }).filter({ visible: true }).count()) {
       await page.goBack(); await page.waitForTimeout(400);
     }
     await page.goBack(); await page.goBack(); await see("Subscribed"); await shot("home-subscribed");

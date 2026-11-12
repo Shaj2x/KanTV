@@ -12,7 +12,7 @@ import { Button, Card, Screen } from "../src/ui/kit";
 function Group({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <View style={{ gap: space(3), marginTop: space(2) }}>
-      <Text style={[type.small, { color: color.muted, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.6 }]}>{title}</Text>
+      <Text style={type.label}>{title}</Text>
       {hint ? <Text style={type.small}>{hint}</Text> : null}
       {children}
     </View>
