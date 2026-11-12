@@ -72,10 +72,32 @@
   .app > .app__pane + .app__pane { border-top: 0; }
   .app__pane--open { padding: 12px; }
 }
+/* the hero's TV stands in a dark room, lit by its own picture, instead of on the kit's sand ground */
+.hero--centred .hero__window { background: radial-gradient(70% 90% at 50% 30%, #5a2c12 0%, #1d130d 45%, #0d0d0d 100%); }
+/* setup pictures: the phone runs off the bottom of its frame; never cropped from the top */
+#setup .mo-pc__visual > img { object-fit: cover; object-position: top; background: #f0f0ee; }
+#setup .mo-pc__visuals { background: #f0f0ee; border-radius: var(--r-lg); overflow: hidden; }
+@media (max-width: 1023px) { main > #setup:not(.is-live) .mo-pc__visual > img { aspect-ratio: 4 / 3; max-height: none; } }
+@media (max-width: 639px) { main > #setup:not(.is-live) { height: auto; min-height: 0; } }
+/* on a phone each section is as tall as what it holds: whole fixed screens left long empty gaps there */
+@media (max-width: 639px) {
+  main > section.section:not(.hero), main > section.section.g2 { height: auto !important; min-height: 0 !important; padding-top: var(--s-8); padding-bottom: var(--s-6); }
+  #features .card:nth-child(2) .panel { --p-h: 260px; }
+  main > section.section.g2 > .wrap { display: block; }
+  main > section.section.g2 > .wrap > .group + .grid { margin-top: var(--s-6); }
+  #pricing .grid.fill { align-content: start; }
+  /* with no fixed screen, a .fill block takes its own height */
+  main > section.section > .wrap > .fill { flex: none; }
+  #cleanup .app.fill { height: 300px; }
+  footer.closing { height: auto !important; min-height: 0 !important; }
+  footer.closing .close__word { margin-top: var(--s-8); }
+}
+/* plan cards keep their own height on a phone */
+@media (max-width: 639px) { #pricing .grid.fill { align-items: start; } #pricing .card--plan { height: auto; } #pricing .faq-shot { display: none; } }
 /* phone screens of the KanTV app, rising out of the bottom of their panel */
 .phone-shot { display: block; width: 100%; height: auto; border-radius: 22px; border: 6px solid #111; }
-#features .panel { --p-h: 336px; background: var(--g-alt); }
-@media (max-width: 639px) { #features .panel { --p-h: 220px; } }
+#features .panel { --p-h: 400px; background: #f0f0ee; }
+@media (max-width: 639px) { #features .panel { --p-h: 340px; } }
 .faq-tv { margin: 0; aspect-ratio: 1256 / 480; border-radius: var(--r-lg); overflow: hidden; background: #f3f3f3; }
 .faq-tv .frame__img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .faq-shot { margin: 0; aspect-ratio: 4 / 3; border-radius: var(--r-lg); overflow: hidden; }
@@ -222,7 +244,7 @@ main #setup.is-live > .mo-pc__grid { align-content: start; padding-top: var(--pa
           <article class="card card--row card--open span-6">
             <h3>AI designer for your home screen</h3>
             <p>Write “a cosy cabin in the woods” and AI picks the colours, the clock and the apps up front.</p>
-            <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:280px;--ax:max(24px, 50% - 140px);--ay:40px;--ay-sm:20px"><img class="phone-shot" src="img/app-design.webp" srcset="img/app-design-600.webp 600w, img/app-design.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV app showing a design called Ember Lounge on a TV" width="800" height="1720"></div></div></div>
+            <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:300px;--ax:max(24px, 50% - 150px);--ay:40px;--ay-sm:24px"><img class="phone-shot" src="img/app-design.webp" srcset="img/app-design-600.webp 600w, img/app-design.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV app showing a design called Ember Lounge on a TV" width="800" height="1720"></div></div></div>
           </article>
           <article class="card card--row card--open span-6">
             <h3>KanTV home screen on your TV</h3>
@@ -235,12 +257,12 @@ main #setup.is-live > .mo-pc__grid { align-content: start; padding-top: var(--pa
         <article class="card card--row card--open span-6">
           <h3>KanTV remote on your phone</h3>
           <p>Arrows, OK, volume and a keyboard for search and passwords, over your home Wi-Fi.</p>
-          <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:280px;--ax:max(24px, 50% - 140px);--ay:40px;--ay-sm:20px"><img class="phone-shot" src="img/app-remote.webp" srcset="img/app-remote-600.webp 600w, img/app-remote.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV remote with arrow keys, OK, Back, Home, mute and volume" width="800" height="1720"></div></div></div>
+          <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:300px;--ax:max(24px, 50% - 150px);--ay:40px;--ay-sm:24px"><img class="phone-shot" src="img/app-remote.webp" srcset="img/app-remote-600.webp 600w, img/app-remote.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV remote with arrow keys, OK, Back, Home, mute and volume" width="800" height="1720"></div></div></div>
         </article>
         <article class="card card--row card--open span-6">
           <h3>KanTV Restore for your TV</h3>
           <p>Restore turns every app back on and returns the stock home screen. It stays free after the trial.</p>
-          <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:280px;--ax:max(24px, 50% - 140px);--ay:40px;--ay-sm:20px"><img class="phone-shot" src="img/app-restore.webp" srcset="img/app-restore-600.webp 600w, img/app-restore.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV app's Restore screen, ready to turn 16 apps back on" width="800" height="1720"></div></div></div>
+          <div class="panel"><div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max:300px;--ax:max(24px, 50% - 150px);--ay:40px;--ay-sm:24px"><img class="phone-shot" src="img/app-restore.webp" srcset="img/app-restore-600.webp 600w, img/app-restore.webp 800w" sizes="280px" loading="lazy" decoding="async" alt="The KanTV app's Restore screen, ready to turn 16 apps back on" width="800" height="1720"></div></div></div>
         </article>
       </div>
     </div>
@@ -310,7 +332,6 @@ main #setup.is-live > .mo-pc__grid { align-content: start; padding-top: var(--pa
     <div class="closing__links">
       <div class="grid">
         <div class="span-4 stack-4">
-          <a class="nav__logo" href="#top"><span class="mark" data-mark="stack" aria-hidden="true"></span>KanTV</a>
           <p class="footer__lede">Your TV without the ads.</p>
         </div>
         <div class="span-2 footer__col"><h3>Product</h3><ul><li><a href="#cleanup">Cleanup</a></li><li><a href="#setup">Setup</a></li></ul></div>
