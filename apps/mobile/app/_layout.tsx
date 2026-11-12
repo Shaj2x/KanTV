@@ -1,5 +1,5 @@
 import { HankenGrotesk_400Regular, HankenGrotesk_500Medium, HankenGrotesk_600SemiBold, HankenGrotesk_700Bold } from "@expo-google-fonts/hanken-grotesk";
-import { Unbounded_500Medium, Unbounded_600SemiBold } from "@expo-google-fonts/unbounded";
+import { VT323_400Regular } from "@expo-google-fonts/vt323";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -12,10 +12,9 @@ import { color } from "../src/theme";
 
 export default function RootLayout() {
   const reduced = useReducedMotion();
-  // The two typefaces ship inside the app; nothing is drawn until they're ready, so text never jumps.
+  // The two typefaces (VT323 pixel type, Hanken Grotesk) ship inside the app; nothing is drawn until they're ready, so text never jumps.
   const [fontsReady, fontError] = useFonts({
-    Unbounded_500Medium,
-    Unbounded_600SemiBold,
+    VT323_400Regular,
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,

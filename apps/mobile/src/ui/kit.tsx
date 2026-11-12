@@ -1,79 +1,114 @@
-// The building blocks every screen uses: the screen frame (top bar with progress, the preview label, the sticky
-// action area, and on wide screens the lit TV beside the column), buttons, notes, rows. One file, so the look
-// stays consistent: a change here reaches every screen.
-import { router, useNavigation } from "expo-router";
-import type { ReactNode } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
+// The building blocks every screen uses, in teletext's vocabulary: a page header (page number, name, clock), a
+// coloured masthead band with the page title, Fastext keys for actions, index rows with dotted leaders and page
+// numbers, and square markers for progress. One file, so the look stays consistent: a change here reaches every
+// screen.
+import { router, useNavigation, usePathname } from "expo-router";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions, type ViewStyle } from "react-native";
+import Animated, { useReducedMotion } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CSS_EASE_OUT, stateTransition } from "../motion";
 import { platform } from "../platform";
-import { bars, color, layout, radius, space, type, web } from "../theme";
-import { Brand, LitTv, useAmbient } from "./ambient";
+import { color, layout, pageFor, space, tt, type, type Page } from "../theme";
+import { BrandMark, LitTv, useAmbient } from "./ambient";
 import { Icon, type IconName } from "./Icon";
 import { Press } from "./Press";
-import Animated, { Keyframe } from "react-native-reanimated";
-import { EASE_OUT, stateTransition } from "../motion";
 
-// A tick landing: grows from 60% with a fade, 220ms. Once per finished step, so it can afford to be felt.
-const TICK = new Keyframe({
-  0: { opacity: 0, transform: [{ scale: 0.6 }] },
-  100: { opacity: 1, transform: [{ scale: 1 }], easing: EASE_OUT },
-}).duration(220);
-// The radio's dot: smaller and quicker; it's picked often.
-const DOT = new Keyframe({
-  0: { opacity: 0, transform: [{ scale: 0.5 }] },
-  100: { opacity: 1, transform: [{ scale: 1 }], easing: EASE_OUT },
-}).duration(160);
+// A tick landing: grows from 60% with a fade, 220ms, once when it appears. A CSS animation rather than a layout
+// animation, so it always ends fully visible even when many land at once.
+const POP = { from: { opacity: 0, transform: [{ scale: 0.6 }] }, to: { opacity: 1, transform: [{ scale: 1 }] } };
+const TICK = { animationName: POP, animationDuration: 220, animationTimingFunction: CSS_EASE_OUT, animationFillMode: "both" } as const;
+// The radio's fill: quicker; it's picked often.
+const DOT = { ...TICK, animationDuration: 160 } as const;
+// The teletext cursor: a hard on/off blink, not a fade.
+const BLINK = { "0%": { opacity: 1 }, "50%": { opacity: 1 }, "50.01%": { opacity: 0 }, "100%": { opacity: 0 } };
+
+/** The page the screen belongs to: its number and colour. Controls inside take their colour from it. */
+const PageContext = createContext<Page>(pageFor("/"));
+export const usePage = () => useContext(PageContext);
 
 /** True on a tablet or a desktop browser: the TV moves beside the column instead of stretching it. */
 export function useWide() {
   return useWindowDimensions().width >= layout.wide;
 }
 
-/** The preview build's label: small and always there, so nobody mistakes the pretend TV for theirs. */
+/** The time, like the clock in the corner of every teletext page. */
+function Clock() {
+  const fmt = () => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
+  const [t, setT] = useState(fmt);
+  useEffect(() => {
+    const id = setInterval(() => setT(fmt()), 15_000);
+    return () => clearInterval(id);
+  }, []);
+  return <Text style={s.headerText}>{t}</Text>;
+}
+
+/** "THU 12 NOV", as at the top of a teletext page. */
+function today() {
+  const d = new Date();
+  return `${["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()]} ${d.getDate()} ${["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][d.getMonth()]}`;
+}
+
+/** A blinking block: something is happening. Steady with Reduce Motion. */
+export function Cursor({ tint = color.text, size = 14 }: { tint?: string; size?: number }) {
+  const reduced = useReducedMotion();
+  return (
+    <Animated.View
+      accessibilityLabel="Working"
+      style={[
+        { width: size * 0.62, height: size, backgroundColor: tint },
+        !reduced && ({ animationName: BLINK, animationDuration: 1000, animationIterationCount: "infinite", animationTimingFunction: "linear" } as object),
+      ]}
+    />
+  );
+}
+
+/** The preview build's label: always there, so nobody mistakes the pretend TV for theirs. */
 export function DemoBanner() {
   if (platform.mode !== "demo") return null;
   return (
     <View style={s.demo} accessibilityRole="text" accessibilityLabel="Preview mode: a simulated TV. Nothing here talks to a real TV.">
-      <Text style={s.demoText}>Simulated TV</Text>
+      <Text style={s.demoText}>DEMO TV</Text>
     </View>
   );
 }
 
-/** "Step 2 of 5" as test-card bars: each finished step lights its colour, the current one is white. */
-function Progress({ step }: { step: string }) {
+/** "Step 2 of 5" as teletext blocks: filled for done, the current one blinking-white outline, the rest empty. */
+function Progress({ step, ink }: { step: string; ink: string }) {
   const m = step.match(/Step (\d+) of (\d+)/);
-  if (!m) return <Text style={s.stepText}>{step}</Text>;
+  if (!m) return null;
   const at = Number(m[1]);
   const of = Number(m[2]);
   return (
     <View style={s.progress} accessibilityRole="progressbar" accessibilityLabel={`Step ${at} of ${of}`} accessibilityValue={{ min: 0, max: of, now: at }}>
-      <View style={s.segments}>
+      <Text style={[s.bandMeta, { color: ink }]}>{`STEP ${at}/${of}`}</Text>
+      <View style={s.blocks}>
         {Array.from({ length: of }, (_, i) => (
-          <Animated.View key={i} style={[s.segment, stateTransition, { transitionDuration: 300 }, i < at - 1 && { backgroundColor: bars[(i + 1) % bars.length] }, i === at - 1 && { backgroundColor: color.text }]} />
+          <Animated.View key={i} style={[s.block, stateTransition, { borderColor: ink }, i < at && { backgroundColor: ink }]} />
         ))}
       </View>
-      <Text style={s.stepText}>{`Step ${at} of ${of}`}</Text>
     </View>
   );
 }
 
-/** Wide screens: the brand and the lit TV, showing whichever design is lighting the app. */
+/** Wide screens: the lit TV beside the page, showing whichever design is lighting the app. */
 function Stage({ children }: { children?: ReactNode }) {
   const spec = useAmbient();
   return (
     <View style={s.stage}>
-      <Brand />
       <View style={s.stageTv}>
         {children ?? (
           <>
             <LitTv spec={spec} />
-            <Text style={[type.small, { textAlign: "center", marginTop: space(6) }]}>
-              On the TV: <Text style={{ color: color.text }}>{spec.name}</Text>
+            <Text style={[type.pixel, { textAlign: "center", marginTop: space(8), color: color.muted }]}>
+              NOW ON YOUR TV: <Text style={{ color: tt.yellow }}>{spec.name.toUpperCase()}</Text>
             </Text>
           </>
         )}
       </View>
-      <Text style={type.tiny}>Nothing is uninstalled. Restore puts it all back, free.</Text>
     </View>
   );
 }
@@ -86,7 +121,7 @@ export function Screen({
   footer,
   back = true,
   stage,
-  brand,
+  hero,
 }: {
   step?: string;
   title?: string;
@@ -96,37 +131,49 @@ export function Screen({
   back?: boolean;
   /** What the wide-screen stage shows instead of the lit TV. */
   stage?: ReactNode;
-  /** Show the KanTV name where the back button would be (the home screen, on phones). */
+  /** Something to show above the masthead band (the home screen's TV). */
+  hero?: ReactNode;
+  /** @deprecated the page header always carries the name now. */
   brand?: boolean;
 }) {
   // From the navigator, not the imperative router, which isn't up yet when the app opens straight onto a screen.
   const canGoBack = useNavigation().canGoBack();
   const wide = useWide();
+  const page = pageFor(usePathname());
 
   const main = (
     <View style={[s.main, wide && s.mainWide]}>
-      <View style={s.topBar}>
+      {/* The page header: back, page number, name, clock. */}
+      <View style={s.header}>
         {back && canGoBack ? (
-          <Press onPress={() => router.back()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => [s.backBtn, pressed && s.backPressed]}>
+          <Press onPress={() => router.back()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => [s.backBtn, pressed && { backgroundColor: color.surfacePressed }]}>
             <Icon name="back" size={20} />
           </Press>
-        ) : brand && !wide ? (
-          <Brand size={26} />
-        ) : (
-          <View style={s.backSpacer} />
-        )}
-        <View style={[s.topCenter, brand && { flex: 0 }]}>{step ? <Progress step={step} /> : null}</View>
-        <View style={s.topRight}>
-          <DemoBanner />
+        ) : null}
+        <Text style={[s.headerText, { color: page.tone }]}>{`P${page.number}`}</Text>
+        <View style={s.headerBrand}>
+          <BrandMark size={22} />
+          <Text style={s.headerText}>KanTV</Text>
         </View>
+        <View style={{ flex: 1 }} />
+        <DemoBanner />
+        <Clock />
       </View>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        {title ? <Text style={[type.display, { textWrap: "balance" } as object]} accessibilityRole="header">{title}</Text> : null}
-        {subtitle ? <Text style={[type.body, { color: color.muted, marginTop: space(3), maxWidth: 480 }]}>{subtitle}</Text> : null}
-        <View style={{ marginTop: title ? space(7) : 0, gap: space(4) }}>{children}</View>
+        {hero}
+        {title ? (
+          <View style={[s.band, { backgroundColor: page.tone }]}>
+            {step ? <Progress step={step} ink={color.accentInk} /> : <Text style={[s.bandMeta, { color: color.accentInk }]}>{page.number === 100 ? today() : page.name.toUpperCase()}</Text>}
+            <Text style={[type.display, s.bandTitle]} accessibilityRole="header">
+              {title}
+            </Text>
+          </View>
+        ) : null}
+        {subtitle ? <Text style={[type.body, { color: color.muted, marginTop: space(4), maxWidth: 480 }]}>{subtitle}</Text> : null}
+        <View style={{ marginTop: title ? space(6) : 0, gap: space(4) }}>{children}</View>
       </ScrollView>
       {footer ? (
-        <View style={[s.footer, web.material]}>
+        <View style={s.footer}>
           <View style={s.footerInner}>{footer}</View>
         </View>
       ) : null}
@@ -134,19 +181,22 @@ export function Screen({
   );
 
   return (
-    <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
-      {wide ? (
-        <View style={s.wide}>
-          <Stage>{stage}</Stage>
-          {main}
-        </View>
-      ) : (
-        main
-      )}
-    </SafeAreaView>
+    <PageContext.Provider value={page}>
+      <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
+        {wide ? (
+          <View style={s.wide}>
+            <Stage>{stage}</Stage>
+            {main}
+          </View>
+        ) : (
+          main
+        )}
+      </SafeAreaView>
+    </PageContext.Provider>
   );
 }
 
+/** A Fastext key: a solid block in the page's colour for the main action, an outlined one for the alternative. */
 export function Button({
   label,
   onPress,
@@ -162,52 +212,54 @@ export function Button({
   busy?: boolean;
   icon?: IconName;
 }) {
+  const page = usePage();
   const off = !!(disabled || busy);
-  // A disabled primary loses its light entirely, so it can't be mistaken for the next step.
-  const ink = kind === "primary" ? (off && !busy ? color.faint : color.accentInk) : kind === "danger" ? color.danger : kind === "ghost" ? color.muted : color.text;
+  const fill = kind === "primary" ? page.tone : kind === "danger" ? tt.red : null;
+  const ink = fill ? (off && !busy ? color.faint : color.accentInk) : kind === "ghost" ? color.muted : color.text;
   return (
     <Press
       onPress={onPress}
       disabled={off}
-      pressRetentionOffset={16}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: off, busy: !!busy }}
       style={({ pressed }) => [
         s.btn,
-        kind === "primary" && { backgroundColor: off && !busy ? color.surfaceRaised : pressed || busy ? color.accentPressed : color.accent },
-        kind === "secondary" && { backgroundColor: pressed ? color.surfacePressed : "transparent", borderWidth: 1.5, borderColor: color.lineStrong },
-        kind === "danger" && { backgroundColor: pressed ? "rgba(255,138,128,0.2)" : color.dangerSoft },
-        kind === "ghost" && { backgroundColor: pressed ? color.accentSoft : "transparent", minHeight: 48 },
-        off && kind !== "primary" && { opacity: 0.4 },
+        fill && { backgroundColor: off && !busy ? color.surfaceRaised : fill, opacity: pressed ? 0.82 : 1 },
+        kind === "secondary" && { borderWidth: 2, borderColor: color.text, backgroundColor: pressed ? color.surfacePressed : "transparent" },
+        kind === "ghost" && { minHeight: 48, backgroundColor: pressed ? color.surfacePressed : "transparent" },
+        off && !fill && { opacity: 0.4 },
         pressed && { transform: [{ scale: 0.97 }] },
       ]}
     >
-      {busy ? <ActivityIndicator color={ink} /> : icon ? <Icon name={icon} tint={ink} size={19} /> : null}
-      <Text style={[type.button, { color: ink }, kind === "ghost" && { fontFamily: type.heading.fontFamily, fontSize: 15.5 }]}>{label}</Text>
+      {busy ? <Cursor tint={ink} size={20} /> : icon && kind !== "ghost" ? <Icon name={icon} tint={ink} size={19} /> : null}
+      <Text style={[type.button, { color: ink }, kind === "ghost" && { fontSize: 24 }]}>{label}</Text>
     </Press>
   );
 }
 
-/** A block of supporting information. Plain by default; a tone adds a tint and an icon, never colour alone. */
+/** A block of supporting information. Plain is a dark panel; a tone draws a box in that colour around it. */
 export function Card({ children, style, tone }: { children: ReactNode; style?: ViewStyle; tone?: "ok" | "warn" | "danger" | "accent" }) {
-  const bg = tone === "ok" ? color.okSoft : tone === "danger" ? color.dangerSoft : tone === "warn" ? color.warnSoft : tone === "accent" ? color.accentSoft : color.surface;
-  const edge = tone === "ok" ? color.ok : tone === "danger" ? color.danger : tone === "warn" ? color.warn : tone === "accent" ? color.accentLine : null;
-  return (
-    <View style={[s.card, { backgroundColor: bg }, style]}>
-      {edge ? <View style={[s.cardEdge, { backgroundColor: edge }]} /> : null}
-      {children}
-    </View>
-  );
+  const page = usePage();
+  const edge = tone === "ok" ? tt.green : tone === "danger" ? tt.red : tone === "warn" ? tt.yellow : tone === "accent" ? page.tone : null;
+  return <View style={[s.card, edge ? { borderWidth: 2, borderColor: edge, backgroundColor: "transparent" } : null, style]}>{children}</View>;
 }
 
 export function Status({ state, label, detail }: { state: "done" | "doing" | "todo" | "warn" | "fail"; label: string; detail?: string }) {
   const icon =
-    state === "done" ? <Animated.View entering={TICK} style={[s.statusBadge, { backgroundColor: color.ok }]}><Icon name="check" tint={color.accentInk} size={13} /></Animated.View> :
-    state === "doing" ? <ActivityIndicator color={color.text} size="small" /> :
-    state === "warn" ? <Icon name="alert" tint={color.warn} size={20} /> :
-    state === "fail" ? <Icon name="alert" tint={color.danger} size={20} /> :
-    <View style={s.statusTodo} />;
+    state === "done" ? (
+      <Animated.View style={[s.mark, { backgroundColor: tt.green }, TICK as object]}>
+        <Icon name="check" tint={color.accentInk} size={14} />
+      </Animated.View>
+    ) : state === "doing" ? (
+      <Cursor size={18} />
+    ) : state === "warn" ? (
+      <View style={[s.mark, { backgroundColor: tt.yellow }]}><Text style={s.markText}>!</Text></View>
+    ) : state === "fail" ? (
+      <View style={[s.mark, { backgroundColor: tt.red }]}><Text style={s.markText}>×</Text></View>
+    ) : (
+      <View style={[s.mark, { borderWidth: 2, borderColor: color.lineStrong }]} />
+    );
   return (
     <View style={s.status}>
       <View style={s.statusIcon}>{icon}</View>
@@ -223,7 +275,11 @@ export function CheckRow({ checked, onToggle, title, detail, note }: { checked: 
   return (
     <Press onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel={title} style={({ pressed }) => [s.checkRow, pressed && { backgroundColor: color.surfacePressed }]}>
       <Animated.View style={[s.box, stateTransition, checked && { backgroundColor: color.accent, borderColor: color.accent }]}>
-        {checked ? <Animated.View entering={DOT}><Icon name="check" tint={color.accentInk} size={15} /></Animated.View> : null}
+        {checked ? (
+          <Animated.View style={DOT as object}>
+            <Icon name="check" tint={color.accentInk} size={15} />
+          </Animated.View>
+        ) : null}
       </Animated.View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={type.body}>{title}</Text>
@@ -235,100 +291,114 @@ export function CheckRow({ checked, onToggle, title, detail, note }: { checked: 
 }
 
 export function Choice({ selected, onPress, title, detail }: { selected: boolean; onPress: () => void; title: string; detail?: string }) {
+  const page = usePage();
   return (
     <Press
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={title}
-      style={({ pressed }) => [s.choice, selected && s.choiceOn, pressed && { transform: [{ scale: 0.985 }] }]}
+      style={({ pressed }) => [s.choice, selected && { borderColor: page.tone }, pressed && { transform: [{ scale: 0.985 }] }]}
     >
-      <Animated.View style={[s.radio, stateTransition, selected && { borderColor: color.accent }]}>{selected ? <Animated.View entering={DOT} style={s.radioDot} /> : null}</Animated.View>
+      <Animated.View style={[s.radio, stateTransition, selected && { borderColor: page.tone }]}>{selected ? <Animated.View style={[s.radioFill, { backgroundColor: page.tone }, DOT as object]} /> : null}</Animated.View>
       <View style={{ flex: 1, gap: 4 }}>
-        <Text style={type.heading}>{title}</Text>
+        <Text style={[type.title, { fontSize: 28, lineHeight: 28 }, selected && { color: page.tone }]}>{title}</Text>
         {detail ? <Text style={type.small}>{detail}</Text> : null}
       </View>
     </Press>
   );
 }
 
-/** A named group of rows, joined into one surface. */
+/** A named group of rows: the name in pixel type, the rows below as an index. */
 export function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+  const page = usePage();
   return (
     <View style={{ gap: space(2) }}>
-      <Text style={type.label} accessibilityRole="header">{title}</Text>
+      <View style={s.sectionHead}>
+        <View style={[s.sectionMark, { backgroundColor: page.tone }]} />
+        <Text style={type.label} accessibilityRole="header">
+          {title}
+        </Text>
+      </View>
       {hint ? <Text style={type.small}>{hint}</Text> : null}
       <View style={s.group}>{children}</View>
     </View>
   );
 }
 
-/** One row of a group: icon, name, what it does, and where it goes. Feedback on press-in. */
-export function Row({ icon, title, detail, onPress, last, tint }: { icon: IconName; title: string; detail?: string; onPress: () => void; last?: boolean; tint?: string }) {
+const LEADER = ". ".repeat(80);
+
+/**
+ * One index line, teletext style: the name, a dotted leader, the page number it goes to in that page's colour.
+ * What it does sits underneath in readable type.
+ */
+export function Row({ title, detail, onPress, last, page, tone }: { icon?: IconName; title: string; detail?: string; onPress: () => void; last?: boolean; page?: number; tone?: string; tint?: string }) {
   return (
-    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityHint={detail} style={({ pressed }) => [s.row, pressed && { backgroundColor: color.surfacePressed }]}>
-      <View style={[s.rowIcon, tint ? { borderColor: tint } : null]}>
-        <Icon name={icon} tint={tint ?? color.text} size={19} />
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityHint={detail} style={({ pressed }) => [s.row, !last && s.rowLine, pressed && { backgroundColor: color.surfacePressed }]}>
+      <View style={s.rowTop}>
+        <Text style={[type.title, { fontSize: 30, lineHeight: 30 }]} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={s.leader} accessibilityElementsHidden importantForAccessibility="no">
+          {LEADER}
+        </Text>
+        {page ? <Text style={[type.title, { fontSize: 30, lineHeight: 30, color: tone ?? color.text }]}>{page}</Text> : null}
       </View>
-      <View style={[s.rowBody, !last && s.rowLine]}>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={type.heading}>{title}</Text>
-          {detail ? <Text style={type.small}>{detail}</Text> : null}
-        </View>
-        <Icon name="chevron" tint={color.faint} size={17} />
-      </View>
+      {detail ? <Text style={type.small}>{detail}</Text> : null}
     </Press>
   );
 }
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.bg },
-  wide: { flex: 1, flexDirection: "row", width: "100%", maxWidth: 1320, alignSelf: "center", gap: space(16), paddingHorizontal: space(12), paddingVertical: space(10) },
+  wide: { flex: 1, flexDirection: "row", width: "100%", maxWidth: 1320, alignSelf: "center", gap: space(16), paddingHorizontal: space(12), paddingVertical: space(8) },
   main: { flex: 1 },
-  mainWide: { maxWidth: 600, borderLeftWidth: 1, borderLeftColor: color.line, paddingLeft: space(6) },
+  mainWide: { maxWidth: 600 },
 
-  stage: { flex: 1, maxWidth: layout.stage + 120, justifyContent: "space-between", paddingVertical: space(2) },
+  stage: { flex: 1, maxWidth: layout.stage + 120 },
   stageTv: { flex: 1, justifyContent: "center", paddingHorizontal: space(4) },
 
-  demo: { paddingHorizontal: 10, height: 26, borderRadius: radius.pill, borderWidth: 1, borderStyle: "dashed", borderColor: color.lineStrong, justifyContent: "center" },
-  demoText: { ...type.tiny, color: color.muted },
+  header: { flexDirection: "row", alignItems: "center", gap: space(3), height: 56, paddingHorizontal: space(5), maxWidth: layout.column, width: "100%", alignSelf: "center" },
+  headerText: { ...type.pixel, fontSize: 24, lineHeight: 24 },
+  headerBrand: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: color.line, borderRadius: 3, marginLeft: -space(1) },
 
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: space(4), height: 60, gap: space(3), maxWidth: layout.column + space(10), width: "100%", alignSelf: "center" },
-  backBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.line },
-  backPressed: { backgroundColor: color.surfacePressed, transform: [{ scale: 0.94 }] },
-  backSpacer: { width: 44, height: 44 },
-  topCenter: { flex: 1, alignItems: "center" },
-  topRight: { flex: 1, minWidth: 44, alignItems: "flex-end" },
-  progress: { alignItems: "center", gap: 7, width: "100%", maxWidth: 180 },
-  segments: { flexDirection: "row", gap: 3, width: "100%" },
-  segment: { flex: 1, height: 5, borderRadius: 1.5, backgroundColor: color.line },
-  stepText: { ...type.tiny, color: color.muted },
+  demo: { backgroundColor: tt.magenta, paddingHorizontal: 6, height: 22, justifyContent: "center", borderRadius: 2 },
+  demoText: { ...type.pixel, fontSize: 20, lineHeight: 20, color: color.accentInk },
 
-  content: { paddingHorizontal: space(5), paddingTop: space(4), paddingBottom: space(12), maxWidth: layout.column, width: "100%", alignSelf: "center" },
-  footer: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.line, backgroundColor: color.chrome },
+  band: { paddingHorizontal: space(4), paddingTop: space(3), paddingBottom: space(4), gap: space(3), borderRadius: 3 },
+  bandMeta: { ...type.pixel, fontSize: 22, lineHeight: 22 },
+  bandTitle: { color: color.accentInk },
+  progress: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  blocks: { flexDirection: "row", gap: 4 },
+  block: { width: 16, height: 12, borderWidth: 2 },
+
+  content: { paddingHorizontal: space(5), paddingTop: space(2), paddingBottom: space(12), maxWidth: layout.column, width: "100%", alignSelf: "center" },
+  footer: { borderTopWidth: 2, borderTopColor: color.line, backgroundColor: color.chrome },
   footerInner: { paddingHorizontal: space(5), paddingTop: space(4), paddingBottom: space(4), gap: space(2), maxWidth: layout.column, width: "100%", alignSelf: "center" },
 
-  btn: { minHeight: 56, borderRadius: radius.pill, paddingHorizontal: space(6), flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space(2) },
+  btn: { minHeight: 58, borderRadius: 3, paddingHorizontal: space(5), flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space(3) },
 
-  card: { borderRadius: radius.md, padding: space(5), gap: space(2), overflow: "hidden" },
-  cardEdge: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3 },
+  card: { borderRadius: 3, padding: space(5), gap: space(2), backgroundColor: color.surface },
 
   status: { flexDirection: "row", gap: space(3), alignItems: "flex-start", paddingVertical: space(2) },
   statusIcon: { width: 24, height: 24, alignItems: "center", justifyContent: "center", marginTop: 1 },
-  statusBadge: { width: 20, height: 20, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  statusTodo: { width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: color.lineStrong },
+  mark: { width: 20, height: 20, alignItems: "center", justifyContent: "center", borderRadius: 2 },
+  markText: { ...type.pixel, fontSize: 22, lineHeight: 20, color: color.accentInk },
 
-  checkRow: { flexDirection: "row", gap: space(3), paddingVertical: space(4), paddingHorizontal: space(4), alignItems: "flex-start", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  checkRow: { flexDirection: "row", gap: space(3), paddingVertical: space(4), paddingHorizontal: space(4), alignItems: "flex-start", borderBottomWidth: 1, borderBottomColor: color.line },
+  box: { width: 22, height: 22, borderRadius: 2, borderWidth: 2, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center", marginTop: 1 },
 
-  choice: { flexDirection: "row", gap: space(4), paddingVertical: space(5), paddingHorizontal: space(5), borderRadius: radius.md, borderWidth: 1.5, borderColor: color.line, alignItems: "center" },
-  choiceOn: { borderColor: color.accent, backgroundColor: color.accentSoft },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center" },
-  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: color.accent },
+  choice: { flexDirection: "row", gap: space(4), paddingVertical: space(4), paddingHorizontal: space(4), borderRadius: 3, borderWidth: 2, borderColor: color.line, alignItems: "center" },
+  radio: { width: 24, height: 24, borderRadius: 2, borderWidth: 2, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center" },
+  radioFill: { width: 12, height: 12 },
 
-  group: { backgroundColor: color.surface, borderRadius: radius.lg, overflow: "hidden" },
-  row: { flexDirection: "row", alignItems: "center", gap: space(4), paddingLeft: space(4) },
-  rowIcon: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center" },
-  rowBody: { flex: 1, flexDirection: "row", alignItems: "center", gap: space(3), paddingVertical: space(4), paddingRight: space(4), minHeight: 72 },
-  rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.line },
+  sectionHead: { flexDirection: "row", alignItems: "center", gap: space(2) },
+  sectionMark: { width: 10, height: 18 },
+  group: { borderTopWidth: 1, borderTopColor: color.line },
+  row: { paddingVertical: space(4), paddingHorizontal: space(1), gap: space(1), minHeight: 64, justifyContent: "center" },
+  rowLine: { borderBottomWidth: 1, borderBottomColor: color.line },
+  rowTop: { flexDirection: "row", alignItems: "baseline", gap: space(2) },
+  // Wraps onto hidden lines instead of ending in an ellipsis.
+  leader: { ...type.pixel, flex: 1, color: color.lineStrong, fontSize: 24, lineHeight: 24, height: 24, overflow: "hidden" },
 });

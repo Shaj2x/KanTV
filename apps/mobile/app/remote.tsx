@@ -6,7 +6,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type RemoteKeys } from "../src/platform";
 import { demoRemoteLog } from "../src/platform/demo";
 import { useSession } from "../src/session";
-import { color, radius, space, type, web } from "../src/theme";
+import { color, radius, space, tt, type } from "../src/theme";
 import { Icon, type IconName } from "../src/ui/Icon";
 import { Button, Screen, Section } from "../src/ui/kit";
 import { Press } from "../src/ui/Press";
@@ -16,7 +16,7 @@ type Key = Parameters<RemoteKeys["key"]>[0];
 
 function Key({ icon, label, onPress, size = 60, tint }: { icon: IconName; label: string; onPress: () => void; size?: number; tint?: string }) {
   return (
-    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, { width: size, height: size, borderRadius: size / 2 }, pressed && s.keyOn]}>
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, { width: size, height: size, borderRadius: 3 }, pressed && s.keyOn]}>
       <Icon name={icon} size={size > 50 ? 22 : 18} tint={tint} />
     </Press>
   );
@@ -99,7 +99,7 @@ export default function Remote() {
           <Press onPress={() => press("VOLUME_DOWN")} accessibilityLabel="Volume down" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
             <Icon name="volDown" size={22} />
           </Press>
-          <Text style={s.rockerLabel}>Volume</Text>
+          <Text style={s.rockerLabel}>VOL</Text>
           <Press onPress={() => press("VOLUME_UP")} accessibilityLabel="Volume up" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
             <Icon name="volUp" size={22} />
           </Press>
@@ -118,27 +118,28 @@ export default function Remote() {
 }
 
 const s = StyleSheet.create({
-  body: { alignSelf: "center", width: "100%", maxWidth: 300, paddingVertical: space(6), paddingHorizontal: space(5), gap: space(6), borderRadius: 48, backgroundColor: color.surface, borderWidth: 1, borderColor: color.line, boxShadow: "0 30px 60px -20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" } as object,
+  // A remote drawn in teletext's blocks: black body, square keys, the four arrows as a cross around OK.
+  body: { alignSelf: "center", width: "100%", maxWidth: 300, paddingVertical: space(6), paddingHorizontal: space(5), gap: space(6), borderRadius: 18, backgroundColor: color.bg, borderWidth: 2, borderColor: color.line },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  led: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.line, marginLeft: space(4) },
-  ledOn: { flex: 1, borderRadius: 4, backgroundColor: color.ok, boxShadow: "0 0 8px 2px rgba(111,227,180,0.6)" } as object,
-  pad: { width: 220, height: 220, alignSelf: "center", borderRadius: 110, backgroundColor: color.surfaceRaised, borderWidth: 1, borderColor: color.line },
-  arrow: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
-  arrowOn: { backgroundColor: color.accentSoft },
-  up: { position: "absolute", top: 2, left: 77 },
-  down: { position: "absolute", bottom: 2, left: 77 },
-  left: { position: "absolute", left: 2, top: 77 },
-  right: { position: "absolute", right: 2, top: 77 },
-  okFrame: { position: "absolute", top: 64, left: 64 },
-  ok: { width: 90, height: 90, borderRadius: 45, backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.lineStrong },
-  okOn: { backgroundColor: color.accent, transform: [{ scale: 0.96 }] },
-  okText: { ...type.title, fontSize: 17 },
-  row: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: space(2) },
-  key: { backgroundColor: color.surfaceRaised, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: color.line },
+  led: { width: 10, height: 10, backgroundColor: color.line, marginLeft: space(2) },
+  ledOn: { flex: 1, backgroundColor: color.ok },
+  pad: { width: 216, height: 216, alignSelf: "center" },
+  arrow: { width: 68, height: 68, borderRadius: 3, borderWidth: 2, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center" },
+  arrowOn: { backgroundColor: color.surfacePressed },
+  up: { position: "absolute", top: 0, left: 74 },
+  down: { position: "absolute", bottom: 0, left: 74 },
+  left: { position: "absolute", left: 0, top: 74 },
+  right: { position: "absolute", right: 0, top: 74 },
+  okFrame: { position: "absolute", top: 74, left: 74 },
+  ok: { width: 68, height: 68, borderRadius: 3, backgroundColor: tt.blue, alignItems: "center", justifyContent: "center" },
+  okOn: { opacity: 0.8, transform: [{ scale: 0.95 }] },
+  okText: { ...type.title, color: color.accentInk },
+  row: { flexDirection: "row", justifyContent: "space-between" },
+  key: { backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: color.line },
   keyOn: { backgroundColor: color.surfacePressed, transform: [{ scale: 0.94 }] },
-  rocker: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 60, borderRadius: 30, backgroundColor: color.surfaceRaised, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
+  rocker: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 60, borderRadius: 3, borderWidth: 2, borderColor: color.lineStrong, overflow: "hidden" },
   rockerHalf: { width: 76, height: "100%", alignItems: "center", justifyContent: "center" },
-  rockerLabel: { ...type.tiny, color: color.muted },
+  rockerLabel: { ...type.pixel, color: color.muted },
   input: { minWidth: 0, backgroundColor: color.bg, color: color.text, borderRadius: radius.md, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(4), height: 56, fontSize: 16, fontFamily: type.body.fontFamily },
   code: { backgroundColor: color.surface, color: color.text, borderRadius: radius.md, height: 72, fontSize: 30, letterSpacing: 10, textAlign: "center", fontFamily: type.display.fontFamily },
 });

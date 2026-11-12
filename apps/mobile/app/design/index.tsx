@@ -10,7 +10,7 @@ import { useRequireSignIn } from "../../src/auth";
 import { success } from "../../src/feedback";
 import { platform, type Design, type DesignFailure, type Entitlement } from "../../src/platform";
 import { useSession } from "../../src/session";
-import { color, radius, space, type, web } from "../../src/theme";
+import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, CheckRow, Screen, useWide } from "../../src/ui/kit";
 import { LitTv, Tuning, glowOf, setAmbient, useAmbient } from "../../src/ui/ambient";
 import { Press } from "../../src/ui/Press";

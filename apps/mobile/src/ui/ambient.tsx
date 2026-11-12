@@ -102,7 +102,7 @@ export function LitTv({ spec, children, style, intensity = 1 }: { spec?: ThemeSp
 export function BrandMark({ size = 30 }: { size?: number }) {
   const h = size * 0.74;
   return (
-    <View style={{ width: size, height: h, borderRadius: size * 0.2, overflow: "hidden", flexDirection: "row", borderWidth: 2, borderColor: color.text }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={{ width: size, height: h, borderRadius: 2, overflow: "hidden", flexDirection: "row" }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {bars.map((b) => (
         <View key={b} style={{ flex: 1, backgroundColor: b }} />
       ))}
@@ -114,7 +114,7 @@ export function Brand({ size = 28 }: { size?: number }) {
   return (
     <View style={s.brand} accessibilityRole="header" accessibilityLabel="KanTV">
       <BrandMark size={size} />
-      <Text style={[s.brandName, { fontSize: size * 0.64 }]}>KanTV</Text>
+      <Text style={[s.brandName, { fontSize: size * 0.95 }]}>KanTV</Text>
     </View>
   );
 }
@@ -126,7 +126,7 @@ const s = StyleSheet.create({
   stand: { width: "22%", height: 6, backgroundColor: color.tvBezel, borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },
   floor: { position: "absolute", bottom: 0, left: "30%", right: "30%", height: 2, borderRadius: 2 },
   brand: { flexDirection: "row", alignItems: "center", gap: 10 },
-  brandName: { fontFamily: "Unbounded_600SemiBold", color: color.text, letterSpacing: -0.4 },
+  brandName: { fontFamily: "VT323_400Regular", color: color.text },
 });
 
 // Finishing setup: the test-card bars rise one after another, 40ms apart. A rare, earned moment; with Reduce

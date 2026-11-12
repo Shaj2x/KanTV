@@ -2,13 +2,11 @@
 // out when the network hides TVs from each other (guest Wi-Fi, mesh "client isolation").
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type FoundTv } from "../../src/platform";
 import { useSession } from "../../src/session";
 import { color, radius, space, type } from "../../src/theme";
-import { Icon } from "../../src/ui/Icon";
-import { Button, Card, Screen } from "../../src/ui/kit";
-import { Press } from "../../src/ui/Press";
+import { Button, Card, Screen, Cursor, Row } from "../../src/ui/kit";
 
 const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 
@@ -29,19 +27,10 @@ export default function Find() {
     <Screen step="Step 2 of 5" title="Looking for your TV" subtitle="Your phone and the TV need to be on the same Wi-Fi.">
       <View style={{ gap: space(3) }}>
         {found.map((tv) => (
-          <Press key={tv.id} onPress={() => pick(tv)} accessibilityRole="button" style={({ pressed }) => [s.tv, pressed && { opacity: 0.85 }]}>
-            <View style={s.icon}>
-              <Icon name="tv" tint={color.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={type.heading}>{tv.name}</Text>
-              <Text style={type.small}>{tv.host}</Text>
-            </View>
-            <Icon name="chevron" tint={color.faint} size={18} />
-          </Press>
+          <Row key={tv.id} title={tv.name} detail={`Found on your Wi-Fi at ${tv.host}`} onPress={() => pick(tv)} last />
         ))}
         <View style={s.searching}>
-          <ActivityIndicator color={color.accent} />
+          <Cursor size={16} />
           <Text style={type.small}>{found.length ? "Still looking for other TVs…" : "Searching this network…"}</Text>
         </View>
       </View>

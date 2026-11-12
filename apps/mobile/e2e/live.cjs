@@ -60,7 +60,7 @@ const server = http.createServer((req, res) => {
     // Account features send a signed-out person to sign in, then back; also on a cold start straight onto one.
     await page.goto(`http://localhost:${PORT}/account`); await see("Sign in to KanTV");
     await page.goto(`http://localhost:${PORT}/`); await see("Take back your TV");
-    await tap("Design your home screen"); await see("Sign in to KanTV"); await shot("signin-email");
+    await tap("Design"); await see("Sign in to KanTV"); await shot("signin-email");
     await page.getByLabel("Email").fill("not-an-email"); await tap("Email me a code"); await see("doesn't look like an email");
     await page.getByLabel("Email").fill(email); await tap("Email me a code"); await see("Check your email"); await shot("signin-code");
     await page.getByLabel("Code from the email").fill("000000"); await tap("Sign in"); await see("That code isn't right");
@@ -71,7 +71,7 @@ const server = http.createServer((req, res) => {
     await setUpTv();
     await page.goto(`http://localhost:${PORT}/`); await see("Free trial, 7 days left"); await shot("home-trial");
     // The designer has no model key in this stack: it says so plainly instead of failing.
-    await tap("Design your home screen"); await tap("Like a cosy cabin in the woods"); await tap("Design it");
+    await tap("Design"); await tap("Like a cosy cabin in the woods"); await tap("Design it");
     await see("Couldn't reach KanTV"); await shot("design-no-ai");
     await page.goto(`http://localhost:${PORT}/account`); await see("Free trial, until"); await shot("account");
     await tap("Delete my account"); await see("can't be undone"); await tap("Yes, delete everything");
