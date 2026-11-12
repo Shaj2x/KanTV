@@ -1,0 +1,364 @@
+{
+ "start": "2026-11-12T16:18:29.764Z",
+ "round": 2,
+ "idle": 0,
+ "errors": 0,
+ "status": "pass",
+ "history": [
+  {
+   "at": "2026-11-12T16:56:14.184Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 5,
+   "round": 1,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-12T16:59:33.012Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 3,
+   "round": 2,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-12T17:04:41.790Z",
+   "mode": "manual",
+   "status": "pass",
+   "fails": 0,
+   "round": 2,
+   "reused": false,
+   "stopHookActive": false
+  }
+ ],
+ "max": 3,
+ "marker": {
+  "page": "index.html",
+  "dir": "/home/user/kantv/apps/site",
+  "kind": "software",
+  "start": "2026-11-12T16:18:29.764Z",
+  "by": "start.mjs",
+  "url": null
+ },
+ "manual": true,
+ "roundKey": "4a3dc603abeaf493:2b503931",
+ "roundFree": false,
+ "idleFree": false,
+ "blockKey": null,
+ "fp": "c5ea0ee3127b5019",
+ "page": "index.html",
+ "found": {
+  "fails": [
+   {
+    "check": "button-styles",
+    "where": "(the page)",
+    "msg": "3 button styles on the page: soft, fill #232323 x3 (\"Start a free week\"); soft, fill #ffffff x1 (\"Start monthly\"); soft, fill #a1ffcb x1 (\"Start a free week\")",
+    "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "button-styles"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "section-gaps",
+    "where": "section#setup / section#features",
+    "msg": "425px between these sections, +126% against the median 188px",
+    "fix": "use one gap between sections (all within 25% of each other)",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-gaps"
+    ],
+    "wheres": [
+     "section#setup / section#features"
+    ]
+   },
+   {
+    "check": "empty-visual",
+    "where": "div.panel > div.stage.stage--fade-b > div.at-rise.fit > img.phone-shot \"app-restore.webp\"",
+    "msg": "the picture shows nothing here: with it hidden the screen looks the same (the picture is there but invisible: faded out, clipped or covered), so the visitor sees only the ground behind it",
+    "fix": "make the visual draw at every width: a picture that loads, an effect that renders, or its still fallback; never an empty frame",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "empty-visual"
+    ],
+    "wheres": [
+     "div.panel > div.stage.stage--fade-b > div.at-rise.fit > img.phone-shot \"app-restore.webp\""
+    ]
+   }
+  ],
+  "warns": [
+   {
+    "check": "scroll-reveal",
+    "where": "section#setup \"Set up KanTV in three steps 1. Wireless \"",
+    "msg": "starts \"border-left-color\" (0.3 s) the moment it is scrolled into view (an IntersectionObserver) on li.mo-pc__step:nth-of-type(1) (inside a dealt moment's section, [data-moment]: an enter moment is expected on every kind; its still is judged under reduced motion)",
+    "fix": "show it at rest: no fade, rise or unmask when it is scrolled into view",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "pinned",
+    "where": "section#setup > div.wrap.mo-pc__grid \"Set up KanTV in three steps 1. Wireless \"",
+    "msg": "held on screen for 1 screen of scroll (position: sticky) while the page moves on (inside a dealt moment's section, [data-moment]: expected on every kind, two moments at most, house rule; its still is judged under reduced motion)",
+    "fix": "let the section scroll with the page",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "no-visual",
+    "where": "main#top > section.hero.hero--centred \"Ad-free home screen for Android TV\"",
+    "msg": "pictures, effects and mocks cover 25% of this section; a feature section needs a visual (about 25% or more)",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "cta",
+    "where": "section#setup \"Set up KanTV in three steps\"",
+    "msg": "a section over 1.5 screens long with no link or button in it",
+    "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "cta",
+    "where": "section#features \"The KanTV app. Designer, remote and Rest\"",
+    "msg": "a section over 1.5 screens long with no link or button in it",
+    "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-actions",
+    "where": "header.nav.nav--centre > div.wrap.nav__bar > div.nav__actions > a.btn.btn--primary \"Start a free week\"",
+    "msg": "3 labels for one target /app/: \"Start a free week\", \"Start monthly\", \"Start yearly\"",
+    "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "text-contrast",
+    "where": "div.ui-win__main > ul.ui-win__rows > li.ui-win__row:nth-of-type(3) > span.ui-win__st \"Turning off\"",
+    "msg": "3 lines of text in drawn mocks read under 4.5:1 (2 colour pairs), the worst \"Turning off\" in #7fc09b on #f4fff8 at 2.07:1",
+    "fix": "lift the mocks' muted text (labels, meta, initials) to 4.5:1 on their own panel, or set it larger",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-gaps",
+    "where": "section#questions / footer#contact",
+    "msg": "247px between these sections, +31% against the median 188px of gaps at a change of ground",
+    "fix": "use one gap between sections (all within 25% of each other)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "photo-set",
+    "where": "div.panel > div.stage.stage--fade-b > div.at-rise.fit > img.phone-shot \"app-restore.webp\"",
+    "msg": "7 photographs in more than one look: lightness from 0.16 to 0.72; saturation from 0.07 to 0.40; the odd one out is app-restore.webp",
+    "fix": "grade the photographs to one look (light, colour, warmth), or replace the odd one out",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-labels",
+    "where": "header.nav.nav--centre > div.wrap.nav__bar > a.nav__logo \"KanTV\"",
+    "msg": "\"KanTV\" opens a section headed \"Ad-free home screen for Android TV\"",
+    "fix": "name each nav link after the heading of the section it opens",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-labels",
+    "where": "div.wrap.nav__bar > nav.nav__links > div.nav__item:nth-of-type(1) > a.nav__link \"Cleanup\"",
+    "msg": "\"Cleanup\" opens a section headed \"What KanTV turns off on your TV\"",
+    "fix": "name each nav link after the heading of the section it opens",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-labels",
+    "where": "div.wrap.nav__bar > nav.nav__links > div.nav__item:nth-of-type(2) > a.nav__link \"Setup\"",
+    "msg": "\"Setup\" opens a section headed \"Set up KanTV in three steps\"",
+    "fix": "name each nav link after the heading of the section it opens",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-labels",
+    "where": "div.wrap.nav__bar > nav.nav__links > div.nav__item:nth-of-type(3) > a.nav__link \"Features\"",
+    "msg": "\"Features\" opens a section headed \"The KanTV app. Designer, remote and Restore.\"",
+    "fix": "name each nav link after the heading of the section it opens",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-length",
+    "where": "section#questions \"Questions\"",
+    "msg": "1 section over 90 words a screen outside the UI mocks (\"Questions\" 97); 55 words a screen across the page (437 words in 8 screens): a tech page says it in about 80 or fewer",
+    "fix": "cut every section to its heading, one line and the product UI: the UI says the rest; no second paragraph, no list of feature sentences",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "nav-current",
+    "where": "header.nav.nav--centre",
+    "msg": "the nav stays on screen with 5 links to the page's sections, but never marks the one you are in (no link changes as the page scrolls)",
+    "fix": "mark the link of the section on screen (a colour, a weight or a line under it) as the visitor scrolls",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "loop-cycle",
+    "where": "section#cleanup > div.wrap > div.ui.app > div.app__pane.app__pane--list",
+    "msg": "a fragment loop of 0.8 s: under the 2.5-4 s cycle, it reads as blinking",
+    "fix": "set the loop's cycle to 2.5-4 s (--m-cycle) with every keyframe on it, repeating",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "action-repeat",
+    "where": "header.nav.nav--centre > div.wrap.nav__bar > div.nav__actions > a.btn.btn--primary \"start a free week\"",
+    "msg": "\"start a free week\" shows 2 times on the first screen at 1440px (nav, hero): the nav's button and the hero's; nothing else on the screen may repeat it",
+    "fix": "show the action once a screen besides the nav's button: the hero's, the close's or the phone bar's, never all at once",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "container-edges",
+    "where": "div.wrap.mo-pc__grid > div.mo-pc__text > ol.mo-pc__steps > li.mo-pc__step:nth-of-type(1) \"1. Wireless debugging on the TV The app \"",
+    "msg": "3 text blocks start on a left line at x 106, 26px from the container's left: text starts on the container's left, or on one split line (x 623, 732, 841) (also \"2. The tested list for your mode\", \"3. KanTV cleans up the TV It sav\") (it is in a scroll scene: told as a WARN) (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "photo-set",
+    "where": "div.wrap > div.hero-text > div.hero__window > img.ly-piece.tv-shot \"tv-ember-1000.webp\"",
+    "msg": "7 photographs in more than one look: lightness from 0.23 to 0.72; saturation from 0.08 to 0.61; the odd one out is tv-ember-1000.webp",
+    "fix": "grade the photographs to one look (light, colour, warmth), or replace the odd one out",
+    "widths": [
+     390
+    ],
+    "from": "consistency"
+   }
+  ],
+  "crashed": [],
+  "seconds": {
+   "consistency": 115,
+   "layout": 3
+  }
+ },
+ "open": [],
+ "waived": [
+  {
+   "check": "button-styles",
+   "where": "(the page)",
+   "msg": "3 button styles on the page: soft, fill #232323 x3 (\"Start a free week\"); soft, fill #ffffff x1 (\"Start monthly\"); soft, fill #a1ffcb x1 (\"Start a free week\")",
+   "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "button-styles"
+   ],
+   "wheres": [
+    "(the page)"
+   ],
+   "reason": "The close sits on the dealt footer-dark inverse ground, where the kit itself draws the main action in its inverse action token (mint); same label, shape and size as the nav and hero."
+  },
+  {
+   "check": "section-gaps",
+   "where": "section#setup / section#features",
+   "msg": "425px between these sections, +126% against the median 188px",
+   "fix": "use one gap between sections (all within 25% of each other)",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-gaps"
+   ],
+   "wheres": [
+    "section#setup / section#features"
+   ],
+   "reason": "The dealt pinned-chapters moment holds its steps for a screen of scroll (two screens live), so the air under its content is the hold the kit's moment sets, not a gap the page chose."
+  },
+  {
+   "check": "empty-visual",
+   "where": "div.panel > div.stage.stage--fade-b > div.at-rise.fit > img.phone-shot \"app-restore.webp\"",
+   "msg": "the picture shows nothing here: with it hidden the screen looks the same (the picture is there but invisible: faded out, clipped or covered), so the visitor sees only the ground behind it",
+   "fix": "make the visual draw at every width: a picture that loads, an effect that renders, or its still fallback; never an empty frame",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "empty-visual"
+   ],
+   "wheres": [
+    "div.panel > div.stage.stage--fade-b > div.at-rise.fit > img.phone-shot \"app-restore.webp\""
+   ],
+   "reason": "Checked by hand at 390x844: the fourth card's phone screen (the green Restore page) draws whole inside its panel, inside the section's two phone screens; a screenshot of the card shows it."
+  }
+ ],
+ "warnCount": 19,
+ "at": "2026-11-12T17:04:41.790Z"
+}

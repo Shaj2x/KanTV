@@ -1,0 +1,7 @@
+# built by build.sh
+app/
+# checker and screenshot output
+shots/
+.taste-skill/chrome-*
+.taste-skill/consistency/
+.taste-skill/*.txt

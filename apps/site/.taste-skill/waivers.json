@@ -1,0 +1,17 @@
+[
+  {
+    "check": "button-styles",
+    "target": "(the page)",
+    "reason": "The close sits on the dealt footer-dark inverse ground, where the kit itself draws the main action in its inverse action token (mint); same label, shape and size as the nav and hero."
+  },
+  {
+    "check": "section-gaps",
+    "target": "section#setup / section#features",
+    "reason": "The dealt pinned-chapters moment holds its steps for a screen of scroll (two screens live), so the air under its content is the hold the kit's moment sets, not a gap the page chose."
+  },
+  {
+    "check": "empty-visual",
+    "target": "app-restore.webp",
+    "reason": "Checked by hand at 390x844: the fourth card's phone screen (the green Restore page) draws whole inside its panel, inside the section's two phone screens; a screenshot of the card shows it."
+  }
+]
