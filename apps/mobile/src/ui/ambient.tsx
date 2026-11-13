@@ -5,7 +5,7 @@ import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 
 import { StyleSheet, Text, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
 import { SvgXml } from "react-native-svg";
 import Animated, { FadeIn, FadeOut, Keyframe, useReducedMotion } from "react-native-reanimated";
-import { EASE_OUT, duration } from "../motion";
+import { CSS_EASE_OUT, EASE_OUT, duration } from "../motion";
 import { SAMPLES } from "../platform/demo/designs";
 import { color, defaultGlow } from "../theme";
 import { ThemePreview } from "./ThemePreview";
@@ -41,18 +41,25 @@ export function glowOf(spec?: ThemeSpec) {
   return spec?.palette.accent ?? defaultGlow;
 }
 
-/** A colour darkened toward black: 0 keeps it, 1 is black. */
-function darken(hex: string, by: number) {
+/** The design colour's hue at a given saturation and lightness (0-1): deep, rich grounds from a pale glow. */
+function shade(hex: string, sat: number, light: number) {
   const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
-  const ch = (v: number) => Math.round(v * (1 - by)).toString(16).padStart(2, "0");
-  return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`;
+  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = (h * 60 + 360) % 360;
+  const c = (1 - Math.abs(2 * light - 1)) * sat, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = light - c / 2;
+  const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  const to = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  return `#${to(r1)}${to(g1)}${to(b1)}`;
 }
 
 /** Flowing silk in a design's colour, from the same generator as the TV's silk wallpaper. */
 export function silkXml(glow: string, w: number, h: number, id: string) {
   const spec: ThemeSpec = {
     ...DEFAULT_THEME,
-    wallpaper: { kind: "pattern", colors: ["#04060C", darken(glow, 0.82), darken(glow, 0.62), glow], pattern: "silk", photoTag: null, dim: 0 },
+    wallpaper: { kind: "pattern", colors: [shade(glow, 0.7, 0.03), shade(glow, 0.8, 0.21), shade(glow, 0.7, 0.35), glow], pattern: "silk", photoTag: null, dim: 0 },
   };
   return wallpaperSvg(spec, Math.max(1, Math.round(w)), Math.max(1, Math.round(h)), id);
 }
@@ -66,12 +73,18 @@ const PICTURE_IN = FadeIn.duration(duration.enter).easing(EASE_OUT);
 // The TV switching on, once per app launch: the picture opens from a bright line across the middle of the
 // screen, the way a set warms up, and only then does its light reach the wall. The one orchestrated moment in
 // the app; with Reduce Motion it is a plain fade.
-const POWER_ON = new Keyframe({
-  0: { opacity: 0, transform: [{ scaleX: 0.5 }, { scaleY: 0.012 }] },
-  35: { opacity: 1, transform: [{ scaleX: 1 }, { scaleY: 0.012 }], easing: EASE_OUT },
-  100: { opacity: 1, transform: [{ scaleX: 1 }, { scaleY: 1 }], easing: EASE_OUT },
-}).duration(460);
-const POWER_ON_REDUCED = FadeIn.duration(duration.enter);
+// A CSS animation, not a layout animation: whatever the browser does, it always ends on the whole picture.
+const POWER_ON = {
+  animationName: {
+    "0%": { opacity: 0, transform: [{ scaleX: 0.5 }, { scaleY: 0.012 }] },
+    "35%": { opacity: 1, transform: [{ scaleX: 1 }, { scaleY: 0.012 }] },
+    "100%": { opacity: 1, transform: [{ scaleX: 1 }, { scaleY: 1 }] },
+  },
+  animationDuration: 460,
+  animationTimingFunction: CSS_EASE_OUT,
+  animationFillMode: "both",
+} as object;
+const POWER_ON_REDUCED = { animationName: { from: { opacity: 0 }, to: { opacity: 1 } }, animationDuration: duration.enter, animationFillMode: "both" } as object;
 const LIGHT_AFTER_POWER = FadeIn.duration(duration.light).delay(320).easing(EASE_OUT);
 let poweredOn = false;
 
@@ -79,7 +92,7 @@ let poweredOn = false;
  * The TV picture on its stage: a dark room inside a rounded frame, lit by the picture's own colour, as on the
  * website's first screen. The one dark, colourful thing on a white screen.
  */
-export function LitTv({ spec, children, style }: { spec?: ThemeSpec; children?: ReactNode; style?: ViewStyle; intensity?: number }) {
+export function LitTv({ spec, children, style, bare }: { spec?: ThemeSpec; children?: ReactNode; style?: ViewStyle; intensity?: number; bare?: boolean }) {
   const ambient = useAmbient();
   const shown = spec ?? ambient;
   const glow = glowOf(shown);
@@ -88,9 +101,9 @@ export function LitTv({ spec, children, style }: { spec?: ThemeSpec; children?: 
   // Only the first TV the app draws powers on; every later one is simply there.
   const first = useRef(!poweredOn);
   poweredOn = true;
-  const backdrop = useMemo(() => (size.w ? silkXml(glow, size.w, size.h, `silk${Math.round(size.w)}`) : ""), [glow, size.w, size.h]);
+  const backdrop = useMemo(() => (size.w && !bare ? silkXml(glow, size.w, size.h, `silk${Math.round(size.w)}`) : ""), [glow, size.w, size.h, bare]);
   return (
-    <View style={[s.stage, style]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+    <View style={[s.stage, bare && s.bare, style]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       {/* Flowing silk in the picture's colour behind the TV. Keyed by colour, so a new design crossfades it. */}
       {backdrop ? (
         <Animated.View key={glow} entering={first.current ? LIGHT_AFTER_POWER : LIGHT_IN} exiting={LIGHT_OUT} pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -99,7 +112,7 @@ export function LitTv({ spec, children, style }: { spec?: ThemeSpec; children?: 
       ) : null}
       <View style={s.tv}>
         <View style={s.bezel}>
-          <Animated.View entering={first.current ? (reduced ? POWER_ON_REDUCED : POWER_ON) : undefined}>
+          <Animated.View style={first.current ? (reduced ? POWER_ON_REDUCED : POWER_ON) : undefined}>
             {children ?? (
               <Animated.View key={shown.name} entering={first.current ? undefined : PICTURE_IN}>
                 <ThemePreview spec={shown} />
@@ -109,6 +122,21 @@ export function LitTv({ spec, children, style }: { spec?: ThemeSpec; children?: 
         </View>
         <View style={s.stand} />
       </View>
+    </View>
+  );
+}
+
+/** Silk filling its parent, in a design's colour: the page behind the app on wide screens. */
+export function SilkBackdrop({ glow }: { glow: string }) {
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const xml = useMemo(() => (size.w ? silkXml(glow, size.w, size.h, "pagesilk") : ""), [glow, size.w, size.h]);
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: shade(glow, 0.7, 0.05) }]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      {xml ? (
+        <Animated.View key={glow} entering={LIGHT_IN} exiting={LIGHT_OUT} style={StyleSheet.absoluteFill}>
+          <SvgXml xml={xml} width={size.w} height={size.h} />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -125,17 +153,18 @@ export function BrandMark({ size = 22 }: { size?: number }) {
   );
 }
 
-export function Brand({ size = 22 }: { size?: number }) {
+export function Brand({ size = 22, light }: { size?: number; light?: boolean }) {
   return (
     <View style={s.brand} accessibilityRole="header" accessibilityLabel="KanTV">
       <BrandMark size={size} />
-      <Text style={[s.brandName, { fontSize: size * 0.86 }]}>KanTV</Text>
+      <Text style={[s.brandName, { fontSize: size * 0.86 }, light && { color: "#FFFFFF" }]}>KanTV</Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   stage: { width: "100%", borderRadius: 22, overflow: "hidden", backgroundColor: "#04060C", paddingHorizontal: "9%", paddingTop: "9%", paddingBottom: "7%", alignItems: "center" },
+  bare: { backgroundColor: "transparent", borderRadius: 0, padding: 0, overflow: "visible" },
   tv: { width: "100%", alignItems: "center" },
   bezel: { width: "100%", borderRadius: 10, backgroundColor: color.tvBezel, boxShadow: "0 18px 40px -12px rgba(0,0,0,0.7)" } as ViewStyle,
   stand: { width: "24%", height: 5, backgroundColor: "#1A1A1A", borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },

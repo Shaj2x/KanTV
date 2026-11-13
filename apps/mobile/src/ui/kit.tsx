@@ -9,7 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CSS_EASE_OUT, stateTransition } from "../motion";
 import { platform } from "../platform";
 import { color, layout, radius, space, type } from "../theme";
-import { Brand, LitTv, useAmbient } from "./ambient";
+import { Brand, LitTv, SilkBackdrop, glowOf, useAmbient } from "./ambient";
 import { Icon, type IconName } from "./Icon";
 import { Press } from "./Press";
 
@@ -75,18 +75,18 @@ function Stage({ children }: { children?: ReactNode }) {
   const spec = useAmbient();
   return (
     <View style={s.stage}>
-      <Brand size={24} />
+      <Brand size={24} light />
       <View style={s.stageTv}>
         {children ?? (
           <>
-            <LitTv spec={spec} />
-            <Text style={[type.small, { textAlign: "center", marginTop: space(5) }]}>
-              On your TV: <Text style={{ color: color.text, fontFamily: type.heading.fontFamily }}>{spec.name}</Text>
+            <LitTv spec={spec} bare />
+            <Text style={[type.small, { textAlign: "center", marginTop: space(6), color: "#C9D6F2" }]}>
+              On your TV: <Text style={{ color: "#FFFFFF", fontFamily: type.heading.fontFamily }}>{spec.name}</Text>
             </Text>
           </>
         )}
       </View>
-      <Text style={type.tiny}>Nothing is uninstalled. Restore puts it all back, free.</Text>
+      <Text style={[type.tiny, { color: "#AFC0E2" }]}>Nothing is uninstalled. Restore puts it all back, free.</Text>
     </View>
   );
 }
@@ -118,6 +118,7 @@ export function Screen({
   const canGoBack = useNavigation().canGoBack();
   const wide = useWide();
   const showBack = back && canGoBack;
+  const ambient = useAmbient();
 
   const main = (
     <View style={[s.main, wide && s.mainWide]}>
@@ -154,9 +155,13 @@ export function Screen({
   return (
     <SafeAreaView style={s.safe} edges={["top", "bottom"]}>
       {wide ? (
-        <View style={s.wide}>
-          <Stage>{stage}</Stage>
-          {main}
+        <View style={s.silkPage}>
+          {/* Wide screens: the page is flowing silk in the design's colour; the app sits on a white card. */}
+          <SilkBackdrop glow={glowOf(ambient)} />
+          <View style={s.wide}>
+            <Stage>{stage}</Stage>
+            {main}
+          </View>
         </View>
       ) : (
         main
@@ -312,7 +317,8 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: color.bg },
   wide: { flex: 1, flexDirection: "row", width: "100%", maxWidth: 1320, alignSelf: "center", gap: space(16), paddingHorizontal: space(12), paddingVertical: space(8) },
   main: { flex: 1 },
-  mainWide: { maxWidth: 600 },
+  mainWide: { maxWidth: 600, backgroundColor: color.bg, borderRadius: radius.xl, overflow: "hidden", boxShadow: "0 30px 80px -30px rgba(0,0,0,0.6)" } as ViewStyle,
+  silkPage: { flex: 1 },
 
   stage: { flex: 1, maxWidth: layout.stage + 80, justifyContent: "space-between", paddingVertical: space(2) },
   stageTv: { flex: 1, justifyContent: "center" },
