@@ -1,0 +1,54 @@
+name: Website and demo app (GitHub Pages)
+
+# Publishes the website (apps/site) at https://<owner>.github.io/<repo>/ and the demo phone app, running against
+# the simulated TV, at .../app/. One-time setup: repository Settings > Pages > Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/site/**", "apps/mobile/**", "packages/core/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the demo app under /<repo>/app
+        run: |
+          cd apps/mobile
+          EXPO_NO_DOTENV=1 EXPO_OFFLINE=1 CI=1 KANTV_WEB_BASE="/${GITHUB_REPOSITORY#*/}/app" \
+            npx expo export --platform web --output-dir ../../_site/app
+      - name: Add the website
+        run: |
+          rsync -a --exclude app --exclude shots --exclude .taste-skill --exclude build.sh --exclude README.md --exclude .gitignore apps/site/ _site/
+          # Pages has no rewrites: an unknown address (a reloaded app screen) gets the app, which opens that screen.
+          cp _site/app/index.html _site/404.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
