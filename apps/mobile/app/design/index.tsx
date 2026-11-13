@@ -187,7 +187,7 @@ const REVEAL = FadeInDown.duration(duration.enter).easing(EASE_OUT).reduceMotion
 const s = StyleSheet.create({
   input: { minHeight: 110, backgroundColor: color.surface, color: color.text, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, padding: space(4), fontSize: 17, lineHeight: 24, textAlignVertical: "top" },
   ideas: { flexDirection: "row", flexWrap: "wrap", gap: space(2) },
-  idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), paddingVertical: space(2), maxWidth: "100%" },
+  idea: { backgroundColor: color.surfaceRaised, borderRadius: radius.pill, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(3), paddingVertical: space(2), minHeight: 44, justifyContent: "center", maxWidth: "100%" },
   ideaOn: { borderColor: color.accentLine, backgroundColor: color.accentSoft },
   option: { backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line, overflow: "hidden" },
   designing: { aspectRatio: 16 / 9, borderRadius: 10, borderWidth: 5, borderColor: "#050506", backgroundColor: color.tvScreen, alignItems: "center", justifyContent: "center", gap: space(3), overflow: "hidden" },

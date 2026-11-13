@@ -157,6 +157,19 @@ describe("subscriptions from RevenueCat", () => {
     expect((await call("GET", "/v1/me", "alice")).json.entitled).toBe(false);
   });
 
+  it("never lets an older event overwrite a newer one (deliveries out of order)", async () => {
+    const t = clock.getTime();
+    await hook(event("r2", "RENEWAL", { expiration_at_ms: t + 60 * DAY, event_timestamp_ms: t + 30 * DAY }));
+    await hook(event("x1", "EXPIRATION", { expiration_at_ms: t, event_timestamp_ms: t + 1 })); // late, from before the renewal
+    expect((await call("GET", "/v1/me", "alice")).json).toMatchObject({ entitled: true, plan: "subscription" });
+  });
+
+  it("does not bring back a deleted account", async () => {
+    await call("DELETE", "/v1/me", "alice");
+    await hook(event("p9", "INITIAL_PURCHASE", { expiration_at_ms: clock.getTime() + 30 * DAY }));
+    expect((await call("GET", "/v1/me", "alice")).status).toBe(401);
+  });
+
   it("applies a retried event once", async () => {
     await hook(event("e1", "INITIAL_PURCHASE", { expiration_at_ms: clock.getTime() + 30 * DAY }));
     await hook(event("e2", "EXPIRATION", { expiration_at_ms: clock.getTime() + 30 * DAY }));
@@ -202,12 +215,26 @@ describe("the person's data", () => {
     expect(JSON.stringify(out)).not.toContain(TV1.serial);
   });
 
+  it("refuses a sign-in token issued before the account was deleted, instead of starting a new account", async () => {
+    await register("alice", TV1);
+    expect((await call("DELETE", "/v1/me", "alice")).status).toBe(200);
+    const r = await call("GET", "/v1/me", "alice");
+    expect(r.status).toBe(401);
+    expect(r.json.error).toBe("account-deleted");
+  });
+
+  it("refuses a request body far larger than any real one, before reading it", async () => {
+    const r = await call("POST", "/v1/me/tvs", "alice", { model: "x".repeat(400 * 1024) });
+    expect(r.status).toBe(413);
+  });
+
   it("can be deleted, and a new account on the same TV still gets no second trial", async () => {
     await register("alice", TV1);
     expect((await call("DELETE", "/v1/me", "alice")).json).toEqual({ deleted: true });
-    const again = await call("GET", "/v1/me/export", "alice");
+    // Signing up again gives the person a new identity (the old one was deleted with the account).
+    const again = await call("GET", "/v1/me/export", "alice-again");
     expect(again.json.tvs).toEqual([]);
     expect(again.json.designs).toEqual([]);
-    expect((await register("alice", TV1)).json.trial).toBe("used-on-this-tv");
+    expect((await register("alice-again", TV1)).json.trial).toBe("used-on-this-tv");
   });
 });

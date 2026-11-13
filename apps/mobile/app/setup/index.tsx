@@ -1,7 +1,6 @@
 // Step 1: turn on developer mode and debugging on the TV. Three short pages with a picture each, for the two
 // menu layouts Android TVs use. Wording follows upstream PROMPT.md's instructions.
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { Text, View } from "react-native";
 import { useRequireSignIn } from "../../src/auth";
 import { color, space, type } from "../../src/theme";
@@ -76,8 +75,12 @@ const PAGES: Record<Family, { title: string; body: string; picture: Parameters<t
 export default function Prepare() {
   // The account comes first: registering the TV during setup is what starts its free week.
   useRequireSignIn("/setup");
-  const [family, setFamily] = useState<Family | null>(null);
-  const [page, setPage] = useState(0);
+  // The TV family and the page live in the address, so the browser's or the phone's Back goes back one page
+  // instead of leaving setup.
+  const params = useLocalSearchParams<{ family?: string; page?: string }>();
+  const family: Family | null = params.family === "google-tv" || params.family === "android-tv" ? params.family : null;
+  const page = family ? Math.min(Math.max(0, Number(params.page) || 0), PAGES[family].length - 1) : 0;
+  const show = (f: Family, n: number) => router.push({ pathname: "/setup", params: { family: f, page: String(n) } });
 
   if (!family) {
     return (
@@ -87,8 +90,8 @@ export default function Prepare() {
         subtitle="Developer mode is hidden in a slightly different place on each. Look at the TV's Settings if you're not sure."
         footer={<Text style={[type.small, { textAlign: "center" }]}>Samsung, LG, Roku or Vizio? They don't run Android, so KanTV can't set them up.</Text>}
       >
-        <Choice selected={false} onPress={() => setFamily("google-tv")} title="Google TV" detail="Tabs at the top: For you, Live, Apps. Chromecast, Google TV Streamer, newer Sony, TCL, Hisense." />
-        <Choice selected={false} onPress={() => setFamily("android-tv")} title="Android TV" detail="Rows of apps and channels. Xiaomi, Philips, Nvidia Shield, older Sony and many others." />
+        <Choice selected={false} onPress={() => show("google-tv", 0)} title="Google TV" detail="Tabs at the top: For you, Live, Apps. Chromecast, Google TV Streamer, newer Sony, TCL, Hisense." />
+        <Choice selected={false} onPress={() => show("android-tv", 0)} title="Android TV" detail="Rows of apps and channels. Xiaomi, Philips, Nvidia Shield, older Sony and many others." />
       </Screen>
     );
   }
@@ -102,8 +105,8 @@ export default function Prepare() {
       title={p.title}
       footer={
         <>
-          <Button label={last ? "Done, find my TV" : "Next"} onPress={() => (last ? router.push("/setup/find") : setPage(page + 1))} />
-          {page > 0 ? <Button kind="ghost" label="Back a step" onPress={() => setPage(page - 1)} /> : <Button kind="ghost" label="My TV looks different" onPress={() => setFamily(null)} />}
+          <Button label={last ? "Done, find my TV" : "Next"} onPress={() => (last ? router.push("/setup/find") : show(family, page + 1))} />
+          {page > 0 ? <Button kind="ghost" label="Back a step" onPress={() => (router.canGoBack() ? router.back() : show(family, page - 1))} /> : <Button kind="ghost" label="My TV looks different" onPress={() => router.replace("/setup")} />}
         </>
       }
     >

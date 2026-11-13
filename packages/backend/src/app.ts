@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono, type Context } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import { z } from "zod";
@@ -104,6 +105,7 @@ const RevenueCatEvent = z.object({
     product_id: z.string().optional(),
     store: z.string().optional(),
     expiration_at_ms: z.number().nullable().optional(),
+    event_timestamp_ms: z.number().optional(),
   }),
 });
 
@@ -121,6 +123,9 @@ function safeEqual(a: string, b: string): boolean {
 export function createApp(cfg: Config) {
   const now = cfg.now ?? (() => new Date());
   const app = new Hono<Vars>();
+  // No request this API takes is near this size (a design request with 400 installed apps is about 40 KB);
+  // anything larger is refused before it is read into memory.
+  app.use("*", bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: "too-large" }, 413) }));
   // The web app calls with a bearer token, never cookies, so only its own origins are let in.
   if (cfg.webOrigins?.length) {
     app.use("*", cors({ origin: cfg.webOrigins, allowHeaders: ["authorization", "content-type"], allowMethods: ["GET", "POST", "DELETE"], maxAge: 600 }));
@@ -152,6 +157,10 @@ export function createApp(cfg: Config) {
       const { payload } = await jwtVerify(token, cfg.auth.jwks, { issuer: cfg.auth.issuer, audience: cfg.auth.audience });
       // Supabase's anonymous sign-ins carry the same audience; a trial needs a real account.
       if (!payload.sub || payload.is_anonymous === true) return c.json({ error: "sign-in-required" }, 401);
+      // A token issued before its account was deleted is still signed and unexpired; it must not bring the
+      // account back as a new, empty one.
+      const [gone] = await cfg.db.query<{ deleted_at: Date }>("select deleted_at from deleted_identities where auth_sub = $1", [payload.sub]);
+      if (gone && (!payload.iat || payload.iat * 1000 <= new Date(gone.deleted_at).getTime())) return c.json({ error: "account-deleted" }, 401);
       c.set("sub", payload.sub);
     } catch {
       return c.json({ error: "sign-in-required" }, 401);
@@ -310,6 +319,7 @@ export function createApp(cfg: Config) {
       await tx.query("update households set trial_account = null where trial_account = $1", [acc.id]);
       await tx.query("delete from accounts where id = $1", [acc.id]);
     });
+    await cfg.db.query("insert into deleted_identities (auth_sub, deleted_at) values ($1, $2) on conflict (auth_sub) do update set deleted_at = excluded.deleted_at", [sub, now()]);
     // After our data is gone, so a failure here can be retried by deleting again.
     if (cfg.deleteIdentity) {
       try {
@@ -350,15 +360,19 @@ export function createApp(cfg: Config) {
               ? "refunded"
               : null;
       if (!status) return;
+      // A purchase event for a deleted account must not bring it back.
+      if ((await tx.query("select 1 from deleted_identities where auth_sub = $1", [ev.app_user_id])).length) return;
       // The app logs in to RevenueCat with the identity provider's sub, so app_user_id is the account's auth_sub.
       const account = await accountFor(tx, ev.app_user_id);
       const periodEnd = ev.expiration_at_ms ? new Date(ev.expiration_at_ms) : null;
+      const eventAt = ev.event_timestamp_ms ? new Date(ev.event_timestamp_ms) : null;
       await tx.query(
-        `insert into subscriptions (account, source, product, status, period_end, updated_at)
-         values ($1, $2, $3, $4, $5, now())
+        `insert into subscriptions (account, source, product, status, period_end, event_at, updated_at)
+         values ($1, $2, $3, $4, $5, $6, now())
          on conflict (account) do update set source = excluded.source, product = excluded.product,
-           status = excluded.status, period_end = excluded.period_end, updated_at = now()`,
-        [account.id, ev.store ?? "unknown", ev.product_id ?? "", status, periodEnd],
+           status = excluded.status, period_end = excluded.period_end, event_at = excluded.event_at, updated_at = now()
+         where subscriptions.event_at is null or excluded.event_at is null or excluded.event_at >= subscriptions.event_at`,
+        [account.id, ev.store ?? "unknown", ev.product_id ?? "", status, periodEnd, eventAt],
       );
     });
     return c.json({ ok: true });
