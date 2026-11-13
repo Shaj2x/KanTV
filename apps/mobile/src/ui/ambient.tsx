@@ -1,9 +1,10 @@
 // The TV picture and the brand mark. A TV in the app stands in a small dark room lit by its picture's colour; the
 // colour follows the design the person is looking at, so a new design re-lights it.
-import { DEFAULT_THEME, wallpaperSvg, type ThemeSpec } from "@kantv/core";
-import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { ThemeSpec } from "@kantv/core";
+import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { StyleSheet, Text, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
-import { SvgXml } from "react-native-svg";
+import { SilkFlow } from "./SilkFlow";
+import { shade } from "./silk";
 import Animated, { FadeIn, FadeOut, Keyframe, useReducedMotion } from "react-native-reanimated";
 import { CSS_EASE_OUT, EASE_OUT, duration } from "../motion";
 import { SAMPLES } from "../platform/demo/designs";
@@ -39,29 +40,6 @@ export function rgba(hex: string, a: number) {
 /** The light a design throws: its accent, unless that's too dark to glow. */
 export function glowOf(spec?: ThemeSpec) {
   return spec?.palette.accent ?? defaultGlow;
-}
-
-/** The design colour's hue at a given saturation and lightness (0-1): deep, rich grounds from a pale glow. */
-function shade(hex: string, sat: number, light: number) {
-  const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
-  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  let h = 0;
-  if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
-  h = (h * 60 + 360) % 360;
-  const c = (1 - Math.abs(2 * light - 1)) * sat, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = light - c / 2;
-  const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
-  const to = (v: number) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
-  return `#${to(r1)}${to(g1)}${to(b1)}`;
-}
-
-/** Flowing silk in a design's colour, from the same generator as the TV's silk wallpaper. */
-export function silkXml(glow: string, w: number, h: number, id: string) {
-  const spec: ThemeSpec = {
-    ...DEFAULT_THEME,
-    wallpaper: { kind: "pattern", colors: [shade(glow, 0.7, 0.03), shade(glow, 0.8, 0.21), shade(glow, 0.7, 0.35), glow], pattern: "silk", photoTag: null, dim: 0 },
-  };
-  return wallpaperSvg(spec, Math.max(1, Math.round(w)), Math.max(1, Math.round(h)), id);
 }
 
 // The light changing colour: the old light fades out while the new one fades in, so the room never goes dark.
@@ -101,13 +79,12 @@ export function LitTv({ spec, children, style, bare }: { spec?: ThemeSpec; child
   // Only the first TV the app draws powers on; every later one is simply there.
   const first = useRef(!poweredOn);
   poweredOn = true;
-  const backdrop = useMemo(() => (size.w && !bare ? silkXml(glow, size.w, size.h, `silk${Math.round(size.w)}`) : ""), [glow, size.w, size.h, bare]);
   return (
     <View style={[s.stage, bare && s.bare, style]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       {/* Flowing silk in the picture's colour behind the TV. Keyed by colour, so a new design crossfades it. */}
-      {backdrop ? (
+      {!bare ? (
         <Animated.View key={glow} entering={first.current ? LIGHT_AFTER_POWER : LIGHT_IN} exiting={LIGHT_OUT} pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <SvgXml xml={backdrop} width={size.w} height={size.h} />
+          <SilkFlow glow={glow} id={`tv${Math.round(size.w)}`} />
         </Animated.View>
       ) : null}
       <View style={s.tv}>
@@ -128,15 +105,11 @@ export function LitTv({ spec, children, style, bare }: { spec?: ThemeSpec; child
 
 /** Silk filling its parent, in a design's colour: the page behind the app on wide screens. */
 export function SilkBackdrop({ glow }: { glow: string }) {
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  const xml = useMemo(() => (size.w ? silkXml(glow, size.w, size.h, "pagesilk") : ""), [glow, size.w, size.h]);
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: shade(glow, 0.7, 0.05) }]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-      {xml ? (
-        <Animated.View key={glow} entering={LIGHT_IN} exiting={LIGHT_OUT} style={StyleSheet.absoluteFill}>
-          <SvgXml xml={xml} width={size.w} height={size.h} />
-        </Animated.View>
-      ) : null}
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: shade(glow, 0.7, 0.05) }]}>
+      <Animated.View key={glow} entering={LIGHT_IN} exiting={LIGHT_OUT} style={StyleSheet.absoluteFill}>
+        <SilkFlow glow={glow} id="page" />
+      </Animated.View>
     </View>
   );
 }
