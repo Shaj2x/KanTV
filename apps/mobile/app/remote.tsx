@@ -6,7 +6,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type RemoteKeys } from "../src/platform";
 import { demoRemoteLog } from "../src/platform/demo";
 import { useSession } from "../src/session";
-import { color, radius, space, tt, type } from "../src/theme";
+import { color, radius, space, type } from "../src/theme";
 import { Icon, type IconName } from "../src/ui/Icon";
 import { Button, Screen, Section } from "../src/ui/kit";
 import { Press } from "../src/ui/Press";
@@ -16,8 +16,8 @@ type Key = Parameters<RemoteKeys["key"]>[0];
 
 function Key({ icon, label, onPress, size = 60, tint }: { icon: IconName; label: string; onPress: () => void; size?: number; tint?: string }) {
   return (
-    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, { width: size, height: size, borderRadius: 3 }, pressed && s.keyOn]}>
-      <Icon name={icon} size={size > 50 ? 22 : 18} tint={tint} />
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} style={({ pressed }) => [s.key, { width: size, height: size, borderRadius: size / 2 }, pressed && s.keyOn]}>
+      <Icon name={icon} size={size > 50 ? 22 : 18} tint={tint ?? KEY_INK} />
     </Press>
   );
 }
@@ -68,24 +68,24 @@ export default function Remote() {
       <View style={s.body}>
         <View style={s.topRow}>
           <View style={s.led}>{remote ? <View style={s.ledOn} /> : null}</View>
-          <Key icon="power" label="Power" onPress={() => press("POWER")} size={44} tint={color.danger} />
+          <Key icon="power" label="Power" onPress={() => press("POWER")} size={44} tint="#FF8A80" />
         </View>
 
         <View style={s.pad}>
           <Press onPress={() => press("UP")} accessibilityLabel="Up" frame={s.up} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
-            <Icon name="up" size={26} />
+            <Icon name="up" size={26} tint={KEY_INK} />
           </Press>
           <Press onPress={() => press("LEFT")} accessibilityLabel="Left" frame={s.left} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
-            <Icon name="left" size={26} />
+            <Icon name="left" size={26} tint={KEY_INK} />
           </Press>
           <Press onPress={() => press("OK")} accessibilityLabel="OK" frame={s.okFrame} style={({ pressed }) => [s.ok, pressed && s.okOn]}>
             <Text style={s.okText}>OK</Text>
           </Press>
           <Press onPress={() => press("RIGHT")} accessibilityLabel="Right" frame={s.right} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
-            <Icon name="right" size={26} />
+            <Icon name="right" size={26} tint={KEY_INK} />
           </Press>
           <Press onPress={() => press("DOWN")} accessibilityLabel="Down" frame={s.down} style={({ pressed }) => [s.arrow, pressed && s.arrowOn]}>
-            <Icon name="down" size={26} />
+            <Icon name="down" size={26} tint={KEY_INK} />
           </Press>
         </View>
 
@@ -97,14 +97,14 @@ export default function Remote() {
 
         <View style={s.rocker}>
           <Press onPress={() => press("VOLUME_DOWN")} accessibilityLabel="Volume down" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
-            <Icon name="volDown" size={22} />
+            <Icon name="volDown" size={22} tint={KEY_INK} />
           </Press>
-          <Text style={s.rockerLabel}>VOL</Text>
+          <Text style={s.rockerLabel}>Volume</Text>
           <Press onPress={() => press("VOLUME_UP")} accessibilityLabel="Volume up" style={({ pressed }) => [s.rockerHalf, pressed && s.arrowOn]}>
-            <Icon name="volUp" size={22} />
+            <Icon name="volUp" size={22} tint={KEY_INK} />
           </Press>
         </View>
-        {platform.mode === "demo" ? <Text style={[type.tiny, { textAlign: "center", minHeight: 17 }]}>{last ? `Preview: would send ${last}` : " "}</Text> : null}
+        {platform.mode === "demo" ? <Text style={[type.tiny, { textAlign: "center", minHeight: 17, color: "#A3A3A3" }]}>{last ? `Preview: would send ${last}` : " "}</Text> : null}
       </View>
 
       <Section title="Type on the TV" hint="Works when a text box is open on the TV: search, passwords, Wi-Fi names.">
@@ -117,29 +117,32 @@ export default function Remote() {
   );
 }
 
+// The keys are drawn light on the remote's dark body.
+const KEY_INK = "#F2F2F2";
+
 const s = StyleSheet.create({
-  // A remote drawn in teletext's blocks: black body, square keys, the four arrows as a cross around OK.
-  body: { alignSelf: "center", width: "100%", maxWidth: 300, paddingVertical: space(6), paddingHorizontal: space(5), gap: space(6), borderRadius: 18, backgroundColor: color.bg, borderWidth: 2, borderColor: color.line },
+  // A remote in your hand: a dark body on the white page, round keys, the arrows on a ring around a mint OK.
+  body: { alignSelf: "center", width: "100%", maxWidth: 300, paddingVertical: space(7), paddingHorizontal: space(6), gap: space(6), borderRadius: 44, backgroundColor: "#1C1C1C", boxShadow: "0 24px 48px -24px rgba(0,0,0,0.45)" } as object,
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  led: { width: 10, height: 10, backgroundColor: color.line, marginLeft: space(2) },
-  ledOn: { flex: 1, backgroundColor: color.ok },
-  pad: { width: 216, height: 216, alignSelf: "center" },
-  arrow: { width: 68, height: 68, borderRadius: 3, borderWidth: 2, borderColor: color.lineStrong, alignItems: "center", justifyContent: "center" },
-  arrowOn: { backgroundColor: color.surfacePressed },
-  up: { position: "absolute", top: 0, left: 74 },
-  down: { position: "absolute", bottom: 0, left: 74 },
-  left: { position: "absolute", left: 0, top: 74 },
-  right: { position: "absolute", right: 0, top: 74 },
-  okFrame: { position: "absolute", top: 74, left: 74 },
-  ok: { width: 68, height: 68, borderRadius: 3, backgroundColor: tt.blue, alignItems: "center", justifyContent: "center" },
-  okOn: { opacity: 0.8, transform: [{ scale: 0.95 }] },
-  okText: { ...type.title, color: color.accentInk },
+  led: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#3A3A3A", marginLeft: space(3), overflow: "hidden" },
+  ledOn: { flex: 1, backgroundColor: color.mint },
+  pad: { width: 220, height: 220, alignSelf: "center", borderRadius: 110, backgroundColor: "#2A2A2A" },
+  arrow: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
+  arrowOn: { backgroundColor: "#3A3A3A" },
+  up: { position: "absolute", top: 4, left: 78 },
+  down: { position: "absolute", bottom: 4, left: 78 },
+  left: { position: "absolute", left: 4, top: 78 },
+  right: { position: "absolute", right: 4, top: 78 },
+  okFrame: { position: "absolute", top: 62, left: 62 },
+  ok: { width: 96, height: 96, borderRadius: 48, backgroundColor: color.mint, alignItems: "center", justifyContent: "center" },
+  okOn: { transform: [{ scale: 0.95 }], opacity: 0.9 },
+  okText: { ...type.title, color: color.text },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  key: { backgroundColor: color.surface, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: color.line },
-  keyOn: { backgroundColor: color.surfacePressed, transform: [{ scale: 0.94 }] },
-  rocker: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 60, borderRadius: 3, borderWidth: 2, borderColor: color.lineStrong, overflow: "hidden" },
+  key: { backgroundColor: "#2A2A2A", alignItems: "center", justifyContent: "center" },
+  keyOn: { backgroundColor: "#3A3A3A", transform: [{ scale: 0.94 }] },
+  rocker: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 56, borderRadius: 28, backgroundColor: "#2A2A2A", overflow: "hidden" },
   rockerHalf: { width: 76, height: "100%", alignItems: "center", justifyContent: "center" },
-  rockerLabel: { ...type.pixel, color: color.muted },
+  rockerLabel: { ...type.tiny, color: "#A3A3A3" },
   input: { minWidth: 0, backgroundColor: color.bg, color: color.text, borderRadius: radius.md, borderWidth: 1, borderColor: color.line, paddingHorizontal: space(4), height: 56, fontSize: 16, fontFamily: type.body.fontFamily },
   code: { backgroundColor: color.surface, color: color.text, borderRadius: radius.md, height: 72, fontSize: 30, letterSpacing: 10, textAlign: "center", fontFamily: type.display.fontFamily },
 });

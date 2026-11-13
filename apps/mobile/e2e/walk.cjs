@@ -51,7 +51,7 @@ const server = http.createServer((req, res) => {
     await see("back to how it was", 20000); await shot("restore-done");
     await tap("Switch debugging off again"); await see("All done, and locked up", 20000);
     await tap("Go to my TV"); await see("Free trial");
-    await tap("Design"); await see("Design your home screen"); await shot("design-empty");
+    await tap("Design your home screen"); await see("Describe it the way"); await shot("design-empty");
     await tap("Like a cosy cabin in the woods"); await tap("Design it"); await see("Try another take", 15000); await shot("design-result", 1500);
     const first = await page.getByText(/^(Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
     await tap("Try another take"); await page.waitForTimeout(1600);
@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
     await tap("My designs"); await see("2 saved"); await shot("saved", 1500);
     await page.goBack(); await page.goBack(); await see("Free trial");
     await tap("Preview: end the free trial"); await see("Free trial over");
-    await tap("Design"); await see("Your free week is over"); await shot("design-after-trial");
+    await tap("Design your home screen"); await see("Your free week is over"); await shot("design-after-trial");
     await tap("My designs"); await see("Your designs are safe"); await shot("saved-locked", 1500);
     await tap("See plans"); await see("Keep your TV looking yours"); await shot("paywall");
     await tap("Subscribe monthly"); await see("Your designs are safe", 15000).catch(() => {});

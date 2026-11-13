@@ -2,7 +2,10 @@
 // highlighted. Drawn rather than photographed, so they match every TV of the family closely enough, stay sharp,
 // and can be translated.
 import { StyleSheet, Text, View } from "react-native";
-import { color, radius, space } from "../theme";
+import { color as app, radius, space } from "../theme";
+
+// A TV screen is dark whatever the app around it looks like: its own light text, highlight and toggles.
+const color = { ...app, text: "#F2F2F2", muted: "#A9ABB5", accent: "#F2F2F2", accentInk: "#111111", ok: "#5AD68F" };
 
 interface MenuItem {
   label: string;

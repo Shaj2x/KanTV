@@ -1,5 +1,4 @@
-import { HankenGrotesk_400Regular, HankenGrotesk_500Medium, HankenGrotesk_600SemiBold, HankenGrotesk_700Bold } from "@expo-google-fonts/hanken-grotesk";
-import { VT323_400Regular } from "@expo-google-fonts/vt323";
+import { FamiljenGrotesk_400Regular, FamiljenGrotesk_500Medium, FamiljenGrotesk_600SemiBold, FamiljenGrotesk_700Bold } from "@expo-google-fonts/familjen-grotesk";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -12,13 +11,12 @@ import { color } from "../src/theme";
 
 export default function RootLayout() {
   const reduced = useReducedMotion();
-  // The two typefaces (VT323 pixel type, Hanken Grotesk) ship inside the app; nothing is drawn until they're ready, so text never jumps.
+  // The typeface (Familjen Grotesk, as on the website) ships inside the app; nothing is drawn until they're ready, so text never jumps.
   const [fontsReady, fontError] = useFonts({
-    VT323_400Regular,
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
+    FamiljenGrotesk_400Regular,
+    FamiljenGrotesk_500Medium,
+    FamiljenGrotesk_600SemiBold,
+    FamiljenGrotesk_700Bold,
   });
   // Screen to screen is the platform's own push (with its swipe-back), or a fade with Reduce Motion.
   if (!fontsReady && !fontError) return <View style={{ flex: 1, backgroundColor: color.bg }} />;
@@ -26,7 +24,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
       <SessionProvider>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg }, animation: reduced ? "fade" : "default" }} />
       </SessionProvider>
       </AuthProvider>
