@@ -25,7 +25,10 @@ function readableOn(bg: string): string {
 
 /** Darkest wallpaper colour; text sits on the wallpaper, so it must be readable there too. */
 function wallpaperBase(spec: ThemeSpec): string[] {
-  return spec.wallpaper.kind === "gradient" || spec.wallpaper.kind === "pattern" ? spec.wallpaper.colors : [];
+  const w = spec.wallpaper;
+  if (w.kind !== "gradient" && w.kind !== "pattern") return [];
+  // Silk's last colour is the thin ribbon of light, not ground the text sits on.
+  return w.pattern === "silk" && w.colors.length > 2 ? w.colors.slice(0, -1) : w.colors;
 }
 
 export function checkTheme(input: unknown, installed: ReadonlySet<string> | null): ThemeCheck {

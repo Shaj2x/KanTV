@@ -13,6 +13,16 @@ const s = (patch: Partial<ThemeSpec> & Pick<ThemeSpec, "name" | "summary" | "pal
 
 export const SAMPLES: ThemeSpec[] = [
   s({
+    name: "Midnight Silk",
+    summary: "One ribbon of light flowing across deep midnight blue, a quiet clock and a frosted dock.",
+    palette: { background: "#030712", surface: "#0E1B36", text: "#F2F6FF", textMuted: "#A9BCE0", accent: "#8CBBFF" },
+    font: "outfit",
+    wallpaper: { kind: "pattern", colors: ["#030712", "#0B2A63", "#1A4A9C", "#8CBBFF"], pattern: "silk", photoTag: null, dim: 0 },
+    layout: { ...DEFAULT_THEME.layout, dockStyle: "glass", focusStyle: "glass", glow: "none" },
+    clock: { ...DEFAULT_THEME.clock, size: "large" },
+    motion: "calm",
+  }),
+  s({
     name: "Ember Lounge",
     summary: "Warm charcoal with an ember-orange glow, a huge thin clock and a floating dock.",
     palette: { background: "#120C0A", surface: "#221815", text: "#FFF3EA", textMuted: "#CDB4A4", accent: "#FF7A2F" },

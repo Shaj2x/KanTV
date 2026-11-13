@@ -53,9 +53,9 @@ const server = http.createServer((req, res) => {
     await tap("Go to my TV"); await see("Free trial");
     await tap("Design your home screen"); await see("Describe it the way"); await shot("design-empty");
     await tap("Like a cosy cabin in the woods"); await tap("Design it"); await see("Try another take", 15000); await shot("design-result", 1500);
-    const first = await page.getByText(/^(Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
+    const first = await page.getByText(/^(Midnight Silk|Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
     await tap("Try another take"); await page.waitForTimeout(1600);
-    const second = await page.getByText(/^(Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
+    const second = await page.getByText(/^(Midnight Silk|Ember Lounge|Deep Ocean|Swiss Grid|Botanical|Neon Noir|Art Deco)$/).filter({ visible: true }).first().textContent();
     if (first === second) throw new Error(`another take gave the same design (${first})`);
     await shot("design-another", 1500);
     await tap("Put it on my TV"); await see("ready to send"); await shot("design-applied", 1700);

@@ -73,7 +73,9 @@
   .app__pane--open { padding: 12px; }
 }
 /* the hero's TV stands in a dark room, lit by its own picture, instead of on the kit's sand ground */
-.hero--centred .hero__window { background: radial-gradient(70% 90% at 50% 30%, #5a2c12 0%, #1d130d 45%, #0d0d0d 100%); }
+/* the hero's TV stands on flowing silk: the same ribbon of light as the Midnight Silk TV design */
+.hero--centred .hero__window { background: #030712 url("img/silk-hero.webp") center / cover no-repeat; }
+@media (max-width: 1023px) { .hero--centred .hero__window { background-image: url("img/silk-hero-1280.webp"); } }
 /* setup pictures: the phone runs off the bottom of its frame; never cropped from the top */
 #setup .mo-pc__visual > img { object-fit: cover; object-position: top; background: #f0f0ee; }
 #setup .mo-pc__visuals { background: #f0f0ee; border-radius: var(--r-lg); overflow: hidden; }
@@ -155,7 +157,7 @@ main #setup.is-live > .mo-pc__grid { align-content: start; padding-top: var(--pa
         <div class="btn-row"><a class="btn btn--primary" href="app/">Start a free week<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#pricing">See prices</a></div>
       </div>
       <div class="hero__window">
-        <img class="ly-piece tv-shot" src="img/tv-ember.webp" srcset="img/tv-ember-1000.webp 986w, img/tv-ember.webp 1973w" sizes="(min-width: 1024px) 880px, 100vw" width="1973" height="1116" alt="A TV home screen made with KanTV: a large clock, warm amber light, and Netflix, YouTube, Prime Video, Spotify and Disney+ in a row" fetchpriority="high">
+        <img class="ly-piece tv-shot" src="img/tv-silk.webp" srcset="img/tv-silk-1000.webp 857w, img/tv-silk.webp 1714w" sizes="(min-width: 1024px) 880px, 100vw" width="1714" height="965" alt="A TV home screen made with KanTV: a ribbon of light flowing across midnight blue, a clock, and Netflix, YouTube, Prime Video, Spotify and Disney+ in a frosted dock" fetchpriority="high">
       </div>
     </div></div>
   </section>

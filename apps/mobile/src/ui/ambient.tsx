@@ -1,8 +1,9 @@
 // The TV picture and the brand mark. A TV in the app stands in a small dark room lit by its picture's colour; the
 // colour follows the design the person is looking at, so a new design re-lights it.
-import type { ThemeSpec } from "@kantv/core";
-import { useRef, useSyncExternalStore, type ReactNode } from "react";
-import { StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { DEFAULT_THEME, wallpaperSvg, type ThemeSpec } from "@kantv/core";
+import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { StyleSheet, Text, View, type LayoutChangeEvent, type ViewStyle } from "react-native";
+import { SvgXml } from "react-native-svg";
 import Animated, { FadeIn, FadeOut, Keyframe, useReducedMotion } from "react-native-reanimated";
 import { EASE_OUT, duration } from "../motion";
 import { SAMPLES } from "../platform/demo/designs";
@@ -40,6 +41,22 @@ export function glowOf(spec?: ThemeSpec) {
   return spec?.palette.accent ?? defaultGlow;
 }
 
+/** A colour darkened toward black: 0 keeps it, 1 is black. */
+function darken(hex: string, by: number) {
+  const n = parseInt(hex.replace("#", "").slice(0, 6), 16);
+  const ch = (v: number) => Math.round(v * (1 - by)).toString(16).padStart(2, "0");
+  return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`;
+}
+
+/** Flowing silk in a design's colour, from the same generator as the TV's silk wallpaper. */
+export function silkXml(glow: string, w: number, h: number, id: string) {
+  const spec: ThemeSpec = {
+    ...DEFAULT_THEME,
+    wallpaper: { kind: "pattern", colors: ["#04060C", darken(glow, 0.82), darken(glow, 0.62), glow], pattern: "silk", photoTag: null, dim: 0 },
+  };
+  return wallpaperSvg(spec, Math.max(1, Math.round(w)), Math.max(1, Math.round(h)), id);
+}
+
 // The light changing colour: the old light fades out while the new one fades in, so the room never goes dark.
 const LIGHT_IN = FadeIn.duration(duration.light).easing(EASE_OUT);
 const LIGHT_OUT = FadeOut.duration(duration.light).easing(EASE_OUT);
@@ -62,25 +79,24 @@ let poweredOn = false;
  * The TV picture on its stage: a dark room inside a rounded frame, lit by the picture's own colour, as on the
  * website's first screen. The one dark, colourful thing on a white screen.
  */
-export function LitTv({ spec, children, style, intensity = 1 }: { spec?: ThemeSpec; children?: ReactNode; style?: ViewStyle; intensity?: number }) {
+export function LitTv({ spec, children, style }: { spec?: ThemeSpec; children?: ReactNode; style?: ViewStyle; intensity?: number }) {
   const ambient = useAmbient();
   const shown = spec ?? ambient;
   const glow = glowOf(shown);
   const reduced = useReducedMotion();
+  const [size, setSize] = useState({ w: 0, h: 0 });
   // Only the first TV the app draws powers on; every later one is simply there.
   const first = useRef(!poweredOn);
   poweredOn = true;
-  const lightKey = `${glow}-${intensity}`;
+  const backdrop = useMemo(() => (size.w ? silkXml(glow, size.w, size.h, `silk${Math.round(size.w)}`) : ""), [glow, size.w, size.h]);
   return (
-    <View style={[s.stage, style]}>
-      {/* The picture's light on the room behind it. Keyed by colour, so a new design crossfades the light. */}
-      <Animated.View
-        key={lightKey}
-        entering={first.current ? LIGHT_AFTER_POWER : LIGHT_IN}
-        exiting={LIGHT_OUT}
-        pointerEvents="none"
-        style={[s.spill, { boxShadow: `0 0 80px 40px ${rgba(glow, 0.42 * intensity)}, 0 0 220px 120px ${rgba(glow, 0.16 * intensity)}` } as ViewStyle]}
-      />
+    <View style={[s.stage, style]} onLayout={(e: LayoutChangeEvent) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
+      {/* Flowing silk in the picture's colour behind the TV. Keyed by colour, so a new design crossfades it. */}
+      {backdrop ? (
+        <Animated.View key={glow} entering={first.current ? LIGHT_AFTER_POWER : LIGHT_IN} exiting={LIGHT_OUT} pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <SvgXml xml={backdrop} width={size.w} height={size.h} />
+        </Animated.View>
+      ) : null}
       <View style={s.tv}>
         <View style={s.bezel}>
           <Animated.View entering={first.current ? (reduced ? POWER_ON_REDUCED : POWER_ON) : undefined}>
@@ -119,8 +135,7 @@ export function Brand({ size = 22 }: { size?: number }) {
 }
 
 const s = StyleSheet.create({
-  stage: { width: "100%", borderRadius: 22, overflow: "hidden", backgroundColor: "#0D0D0D", paddingHorizontal: "7%", paddingTop: "7%", paddingBottom: "5%", alignItems: "center" },
-  spill: { position: "absolute", left: "25%", right: "25%", top: "25%", bottom: "35%", borderRadius: 999 },
+  stage: { width: "100%", borderRadius: 22, overflow: "hidden", backgroundColor: "#04060C", paddingHorizontal: "9%", paddingTop: "9%", paddingBottom: "7%", alignItems: "center" },
   tv: { width: "100%", alignItems: "center" },
   bezel: { width: "100%", borderRadius: 10, backgroundColor: color.tvBezel, boxShadow: "0 18px 40px -12px rgba(0,0,0,0.7)" } as ViewStyle,
   stand: { width: "24%", height: 5, backgroundColor: "#1A1A1A", borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },

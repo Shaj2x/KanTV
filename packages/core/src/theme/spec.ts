@@ -10,7 +10,7 @@ const hex = z.string().regex(/^#[0-9A-Fa-f]{6}$/, "a colour as #RRGGBB");
 export const FONTS = ["outfit", "inter", "manrope", "space-grotesk", "fraunces", "playfair-display", "dm-serif-display", "jetbrains-mono", "nunito", "bebas-neue"] as const;
 /** Tags for the licensed wallpaper library; the app picks an image that carries the tag. */
 export const PHOTO_TAGS = ["mountains", "ocean", "forest", "desert", "city-night", "aurora", "space", "autumn", "snow", "abstract-paint", "architecture", "flowers"] as const;
-export const PATTERNS = ["grain", "dots", "waves", "grid", "stars", "bokeh", "stripes", "topography"] as const;
+export const PATTERNS = ["grain", "dots", "waves", "grid", "stars", "bokeh", "stripes", "topography", "silk"] as const;
 
 export const ThemeSpecSchema = z.object({
   name: z.string().min(1).max(40).describe("A short, evocative name for this design, 1-4 words"),
@@ -29,7 +29,7 @@ export const ThemeSpecSchema = z.object({
     .object({
       kind: z.enum(["none", "gradient", "sky", "pattern", "photo"]).describe("none: flat background; sky: a dark gradient that follows the time of day"),
       colors: z.array(hex).min(2).max(4).describe("Gradient or pattern colours, dark enough for white text on top"),
-      pattern: z.enum(PATTERNS).nullable().describe("For kind=pattern, otherwise null"),
+      pattern: z.enum(PATTERNS).nullable().describe("For kind=pattern, otherwise null. silk: one glowing ribbon of light flowing across a dark gradient; its glow takes the last colour, so make that one light"),
       photoTag: z.enum(PHOTO_TAGS).nullable().describe("For kind=photo, otherwise null"),
       dim: z.number().int().min(0).max(90).describe("Black overlay over the wallpaper, percent"),
     })
