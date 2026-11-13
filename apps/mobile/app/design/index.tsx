@@ -58,23 +58,40 @@ export default function DesignStudio() {
     setBusy("design");
     setError(null);
     setApplied(null);
-    handle(await platform.designer.design(request, apps, exact));
-    setBusy(null);
+    // finally: a call that throws (no connection) must never leave every button disabled.
+    try {
+      handle(await platform.designer.design(request, apps, exact));
+    } catch {
+      setError(FAILURE.offline);
+    } finally {
+      setBusy(null);
+    }
   };
   const again = async () => {
     if (!design) return;
     setBusy("again");
     setError(null);
     setApplied(null);
-    handle(await platform.designer.regenerate(design.id, apps));
-    setBusy(null);
+    try {
+      handle(await platform.designer.regenerate(design.id, apps));
+    } catch {
+      setError(FAILURE.offline);
+    } finally {
+      setBusy(null);
+    }
   };
   const apply = async () => {
     if (!design) return;
-    setBusy("apply");
     if (!session.householdId) return setError("Set up your TV first, so KanTV knows which TV to put it on.");
-    const r = await platform.designer.apply(design.id, session.householdId, "launcher");
-    setBusy(null);
+    setBusy("apply");
+    let r: Awaited<ReturnType<typeof platform.designer.apply>>;
+    try {
+      r = await platform.designer.apply(design.id, session.householdId, "launcher");
+    } catch {
+      return setError(FAILURE.offline);
+    } finally {
+      setBusy(null);
+    }
     if (r === "subscription-required") return router.push("/paywall");
     if (typeof r === "string") return setError(FAILURE[r]);
     setApplied(Object.keys(r.config).length);

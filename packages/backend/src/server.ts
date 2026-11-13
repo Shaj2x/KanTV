@@ -16,6 +16,17 @@ import Anthropic from "@anthropic-ai/sdk";
 import { DEFAULT_DESIGN_LIMITS } from "./app.ts";
 import { claudeThemeModel } from "./designer.ts";
 
+/** The global AI budget a day, in dollars. A typo must stop the server, not silently switch the cap off. */
+function budgetUsd(): number {
+  const raw = process.env.KANTV_AI_DAILY_BUDGET_USD ?? "50";
+  const usd = Number(raw);
+  if (!Number.isFinite(usd) || usd <= 0) {
+    console.error(`KANTV_AI_DAILY_BUDGET_USD must be a positive number of dollars, such as 50 (got "${raw}")`);
+    process.exit(1);
+  }
+  return usd;
+}
+
 const required = ["DATABASE_URL", "KANTV_PEPPER", "KANTV_LEASE_JWK", "REVENUECAT_WEBHOOK_AUTH"];
 const missing = required.filter((k) => !process.env[k]);
 if (!process.env.SUPABASE_URL && !(process.env.AUTH_JWKS_URL && process.env.AUTH_ISSUER && process.env.AUTH_AUDIENCE)) {
@@ -50,7 +61,7 @@ const app = createApp({
           process.env.KANTV_THEME_MODEL ?? "claude-haiku-5-5",
           (process.env.KANTV_THEME_EFFORT as "low" | "medium" | "high" | undefined) ?? "low",
         ),
-        limits: { ...DEFAULT_DESIGN_LIMITS, dailyBudgetMicroUsd: Number(process.env.KANTV_AI_DAILY_BUDGET_USD ?? 50) * 1_000_000 },
+        limits: { ...DEFAULT_DESIGN_LIMITS, dailyBudgetMicroUsd: budgetUsd() * 1_000_000 },
       }
     : undefined,
 });

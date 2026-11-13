@@ -5,9 +5,18 @@
 import { backendAccount, backendDesigner } from "../api";
 import { accessToken, apiUrl, live } from "../auth";
 import { demoPlatform } from "./demo";
+import { liveFeed } from "./live";
 import type { Platform } from "./types";
 
+const feed = live ? liveFeed(apiUrl) : null;
+
 export const platform: Platform = live
-  ? { ...demoPlatform, designer: backendDesigner(apiUrl!, accessToken), account: backendAccount(apiUrl!, accessToken) }
+  ? {
+      ...demoPlatform,
+      designer: backendDesigner(apiUrl!, accessToken),
+      account: backendAccount(apiUrl!, accessToken),
+      // The signed feed from the backend when the build has its key; the bundled demo lists otherwise.
+      ...(feed ? { feed } : {}),
+    }
   : demoPlatform;
 export type * from "./types";

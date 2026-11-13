@@ -125,7 +125,7 @@ async function runOurs(sc: Scenario, dir: string, upstreamRecord: unknown): Prom
   let adbInsecure = false;
   let aborted = false;
   try {
-    const result = await runDebloat(shell, store, { tvId: "tv", listId: "list", packages: valid.packages, options });
+    const result = await runDebloat(shell, store, { tvId: "tv", listId: "list", packages: valid.packages, options, applyMustKeep: false });
     if (result.ok) {
       skipped = result.plan.skipped.map((s) => s.name).sort();
       reasons = [...result.plan.skipped.map((s) => s.reason), ...result.plan.notes];

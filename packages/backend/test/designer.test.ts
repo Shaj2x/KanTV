@@ -128,6 +128,20 @@ describe("limits", () => {
     expect((await slow("POST", "/v1/me/designs", "carol", ask("b"))).json.error).toBe("too-fast");
   });
 
+  it("counts refused designs, and lets only one of many requests sent at once through", async () => {
+    const refusing = app(scripted([{ stop: "refused" }]), { perDayTrial: 2 });
+    await startTrial(refusing, "dave");
+    await refusing("POST", "/v1/me/designs", "dave", ask("a"));
+    await refusing("POST", "/v1/me/designs", "dave", ask("b"));
+    expect((await refusing("POST", "/v1/me/designs", "dave", ask("c"))).json).toMatchObject({ error: "daily-limit" });
+    const model = scripted([{ output: OCEAN }]);
+    const burst = app(model, { minIntervalMs: 5000 });
+    await startTrial(burst, "erin");
+    const results = await Promise.all(Array.from({ length: 8 }, (_, i) => burst("POST", "/v1/me/designs", "erin", ask(`x${i}`))));
+    expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+    expect(model.prompts).toHaveLength(1);
+  });
+
   it("stops everyone once the day's budget is spent, failed calls included", async () => {
     const call = app(scripted([{ stop: "refused" }]), { dailyBudgetMicroUsd: 600 });
     await startTrial(call);
@@ -140,6 +154,9 @@ describe("limits", () => {
   it("prices calls from the model's usage", () => {
     expect(costMicroUsd("claude-haiku-5-5", { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 0, cacheWriteTokens: 0 })).toBe(350);
     expect(costMicroUsd("claude-sonnet-5-5", { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 0, cacheWriteTokens: 0 })).toBe(7000);
+    // a dated snapshot of a listed model is priced as that model, an unknown one as the dearest
+    expect(costMicroUsd("claude-haiku-5-5-20261001", { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 0, cacheWriteTokens: 0 })).toBe(350);
+    expect(costMicroUsd("claude-mystery-9", { inputTokens: 1000, outputTokens: 500, cacheReadTokens: 0, cacheWriteTokens: 0 })).toBe(14000);
   });
 });
 

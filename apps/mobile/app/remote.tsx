@@ -1,7 +1,7 @@
 // The phone remote: d-pad, OK, Back, Home, volume, power and typing. Over Google's Android TV Remote
 // protocol, which keeps working after debugging is switched off; pairing asks for the code the TV shows.
 import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type RemoteKeys } from "../src/platform";
 import { demoRemoteLog } from "../src/platform/demo";
@@ -29,15 +29,28 @@ export default function Remote() {
   const [code, setCode] = useState("");
   const [text, setText] = useState("");
   const [last, setLast] = useState<string | null>(null);
-  const opened = useRef(false);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
+  // One connection per visit (and per retry), closed when the screen goes away, even if it arrives after.
   useEffect(() => {
-    if (opened.current || !session.tv) return;
-    opened.current = true;
-    platform.remote(session.tv, () => new Promise((resolve) => setCodeAsked(() => resolve))).then(setRemote);
-    return () => remote?.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session.tv]);
+    if (!session.tv) return;
+    let open: RemoteKeys | null = null;
+    let gone = false;
+    setFailed(false);
+    platform
+      .remote(session.tv, () => new Promise((resolve) => setCodeAsked(() => resolve)))
+      .then((r) => {
+        if (gone) return r.close();
+        open = r;
+        setRemote(r);
+      })
+      .catch(() => !gone && (setCodeAsked(null), setFailed(true)));
+    return () => {
+      gone = true;
+      open?.close();
+    };
+  }, [session.tv, attempt]);
 
   if (!session.tv) {
     return (
@@ -52,6 +65,14 @@ export default function Remote() {
     void remote?.key(k);
     setLast(platform.mode === "demo" ? demoRemoteLog[0] ?? k : k);
   };
+
+  if (failed) {
+    return (
+      <Screen title="Couldn't reach the remote" subtitle="Check the TV is on and on the same Wi-Fi as this phone, then try again.">
+        <Button label="Try again" onPress={() => setAttempt((n) => n + 1)} />
+      </Screen>
+    );
+  }
 
   if (codeAsked) {
     return (

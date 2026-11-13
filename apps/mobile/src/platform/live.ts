@@ -1,29 +1,14 @@
-// The account, designer and list feed of the real app, for phones and the web: all through KanTV's backend.
-// The native TV parts (sockets, keystore, discovery) join these in the native platform once it can be built.
-import { fetchFeed } from "@kantv/core";
-import Constants from "expo-constants";
-import { backendAccount, backendDesigner } from "../api";
+// The signed list feed of the real app, from KanTV's backend. The account and designer parts are in ../api;
+// the native TV parts (sockets, keystore, discovery) join these in the native platform once it can be built.
+import { fetchFeed, type Feed } from "@kantv/core";
 
-interface LiveConfig {
-  /** e.g. https://api.kantv.tv; from app.json "extra.kantvApi" or EXPO_PUBLIC_KANTV_API. */
-  api: string;
-  /** The list feed's Ed25519 public key, base64 (public.json from scripts/gen-secrets.ts). */
-  feedPublicKey: string;
-}
-
-export function liveConfig(): LiveConfig | null {
-  const extra = (Constants.expoConfig?.extra ?? {}) as Partial<LiveConfig & { kantvApi: string; kantvFeedPublicKey: string }>;
-  const api = process.env.EXPO_PUBLIC_KANTV_API ?? extra.kantvApi;
-  const feedPublicKey = extra.kantvFeedPublicKey;
-  return api && feedPublicKey ? { api, feedPublicKey } : null;
-}
-
-/** The backend parts, given the login provider's token. */
-export function liveServices(cfg: LiveConfig, token: () => Promise<string>) {
-  const key = Uint8Array.from(atob(cfg.feedPublicKey), (c) => c.charCodeAt(0));
-  return {
-    designer: backendDesigner(cfg.api, token),
-    account: backendAccount(cfg.api, token),
-    feed: () => fetchFeed(cfg.api, key),
-  };
+/**
+ * The verified feed, when the build has the feed's public key (EXPO_PUBLIC_KANTV_FEED_KEY: the Ed25519 public key,
+ * base64, from public.json made by scripts/gen-secrets.ts). fetchFeed checks the signature before anything is used.
+ */
+export function liveFeed(apiUrl: string | undefined): (() => Promise<Feed>) | null {
+  const b64 = process.env.EXPO_PUBLIC_KANTV_FEED_KEY;
+  if (!apiUrl || !b64) return null;
+  const key = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return () => fetchFeed(apiUrl, key);
 }

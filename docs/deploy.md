@@ -71,6 +71,7 @@ The apps are built with:
 | `EXPO_PUBLIC_SUPABASE_URL` | the Project URL |
 | `EXPO_PUBLIC_SUPABASE_KEY` | the publishable key (made to be public; never the secret key) |
 | `EXPO_PUBLIC_KANTV_API_URL` | the backend's address |
+| `EXPO_PUBLIC_KANTV_FEED_KEY` | the list feed's public key (base64, from `public.json` made by `scripts/gen-secrets.ts`); with it the app uses the signed feed from the backend instead of the bundled demo lists |
 
 Without the three, the app builds as the offline preview.
 

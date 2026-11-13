@@ -35,7 +35,7 @@ const server = http.createServer((req, res) => {
   };
   const setUpTv = async () => {
     await tap("Set up my TV"); await see("Which home screen");
-    await tap("Google TV"); await tap("Next"); await tap("Next"); await tap("Done, find my TV");
+    await tap("Google TV"); await see("Find the build number"); await tap("Next"); await see("Turn on USB debugging"); await tap("Next"); await see("Wireless or Network"); await tap("Done, find my TV");
     await see("Living room TV"); await tap("Living room TV"); await see("Look at your TV");
     await tap("Preview: tap Allow on the TV"); await see("Is this your TV?");
   };

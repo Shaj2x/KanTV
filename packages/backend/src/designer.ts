@@ -44,7 +44,10 @@ const PRICES: Record<string, [number, number]> = {
 };
 
 export function costMicroUsd(model: string, u: ModelUsage): number {
-  const [inp, out] = PRICES[model] ?? [4, 20]; // unknown model: assume the dearest, so the budget errs safe
+  // The API may answer with a dated snapshot of the model asked for ("claude-haiku-5-5-20261001"): price it as
+  // that model. A model not listed at all is priced as the dearest, so the budget errs safe.
+  const key = PRICES[model] ? model : Object.keys(PRICES).find((k) => model.startsWith(`${k}-`));
+  const [inp, out] = (key && PRICES[key]) || [4, 20];
   return Math.ceil((u.inputTokens + u.cacheReadTokens + u.cacheWriteTokens * 1.25) * inp + u.outputTokens * out);
 }
 

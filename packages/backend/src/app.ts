@@ -210,13 +210,20 @@ export function createApp(cfg: Config) {
     const account = await accountFor(cfg.db, c.get("sub"));
     const e = await entitlementOf(cfg.db, account.id, now());
     if (!e.entitled) return c.json({ error: "subscription-required", entitlement: e }, 402);
+    // Record the attempt first, then judge it against the attempts before it (lower ids): of requests sent at
+    // once, only the first gets through, and a refused or failed design still counts.
+    const [attempt] = await cfg.db.query<{ id: string }>("insert into design_attempts (account, at) values ($1, $2) returning id", [account.id, now()]);
     const [{ n, last } = { n: 0, last: null }] = await cfg.db.query<{ n: number; last: Date | null }>(
-      "select count(*)::int as n, max(created_at) as last from designs where account = $1 and created_at > $2",
-      [account.id, new Date(now().getTime() - 24 * 3600_000)],
+      "select count(*)::int as n, max(at) as last from design_attempts where account = $1 and at > $2 and id < $3",
+      [account.id, new Date(now().getTime() - 24 * 3600_000), attempt!.id],
     );
     const cap = e.plan === "subscription" ? limits.perDaySubscriber : limits.perDayTrial;
-    if (n >= cap) return c.json({ error: "daily-limit", limit: cap }, 429);
-    if (last && now().getTime() - new Date(last).getTime() < limits.minIntervalMs) return c.json({ error: "too-fast" }, 429);
+    const refuse = async (body: object) => {
+      await cfg.db.query("delete from design_attempts where id = $1", [attempt!.id]);
+      return c.json(body, 429);
+    };
+    if (n >= cap) return refuse({ error: "daily-limit", limit: cap });
+    if (last && now().getTime() - new Date(last).getTime() < limits.minIntervalMs) return refuse({ error: "too-fast" });
     const day = now().toISOString().slice(0, 10);
     const [today] = await cfg.db.query<{ cost: string }>("select cost_microusd::text as cost from ai_spend_daily where day = $1", [day]);
     if (today && Number(today.cost) >= limits.dailyBudgetMicroUsd) return c.json({ error: "busy" }, 503);
@@ -314,6 +321,7 @@ export function createApp(cfg: Config) {
       const [acc] = await tx.query<{ id: string }>("select id from accounts where auth_sub = $1", [sub]);
       if (!acc) return;
       await tx.query("delete from designs where account = $1", [acc.id]);
+      await tx.query("delete from design_attempts where account = $1", [acc.id]);
       await tx.query("delete from account_tvs where account = $1", [acc.id]);
       await tx.query("delete from subscriptions where account = $1", [acc.id]);
       await tx.query("update households set trial_account = null where trial_account = $1", [acc.id]);
@@ -361,7 +369,9 @@ export function createApp(cfg: Config) {
               : null;
       if (!status) return;
       // A purchase event for a deleted account must not bring it back.
-      if ((await tx.query("select 1 from deleted_identities where auth_sub = $1", [ev.app_user_id])).length) return;
+      // (An identity that signed in again after deleting has an account again, and its purchases count.)
+      const deleted = await tx.query("select 1 from deleted_identities d where d.auth_sub = $1 and not exists (select 1 from accounts a where a.auth_sub = d.auth_sub)", [ev.app_user_id]);
+      if (deleted.length) return;
       // The app logs in to RevenueCat with the identity provider's sub, so app_user_id is the account's auth_sub.
       const account = await accountFor(tx, ev.app_user_id);
       const periodEnd = ev.expiration_at_ms ? new Date(ev.expiration_at_ms) : null;

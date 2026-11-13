@@ -6,6 +6,7 @@
 import { CLAIM_QUERY, HOME_QUERY, KNOWN_STOCK_LAUNCHERS, packageOf } from "./packages.ts";
 import { parseHomeClaims } from "./guards.ts";
 import { lastLine, type TvShell } from "./shell.ts";
+import { resolveHome } from "./recovery.ts";
 
 export type StockLauncher =
   | { kind: "stock"; package: string }
@@ -61,9 +62,7 @@ async function home(shell: TvShell): Promise<string> {
 async function rollback(shell: TvShell, stock: string | null): Promise<{ rolledBack: boolean; home: string }> {
   if (!stock) return { rolledBack: false, home: await home(shell) };
   await shell.run(`pm enable --user 0 ${stock}`);
-  await shell.run(
-    `cmd package set-home-activity --user 0 $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME ${stock} | tail -n 1)`,
-  );
+  await shell.run(resolveHome(stock));
   const back = await home(shell);
   return { rolledBack: back.startsWith(`${stock}/`), home: back };
 }

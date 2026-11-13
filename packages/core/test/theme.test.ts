@@ -91,6 +91,15 @@ describe("the checks", () => {
     expect(r.spec!.palette.text).toBe(DEFAULT_THEME.palette.text);
   });
 
+  it("darkens enough to really be readable, even when the design already had some dim", () => {
+    const r = checkTheme(variant((s) => (s.wallpaper = { kind: "gradient", colors: ["#FFFFFF", "#FFF4D0"], pattern: null, photoTag: null, dim: 50 })), null);
+    const dim = r.spec!.wallpaper.dim;
+    expect(dim).toBeGreaterThan(50);
+    const k = 1 - dim / 100;
+    const dimmed = "#" + [255, 255, 255].map((v) => Math.round(v * k).toString(16).padStart(2, "0")).join("");
+    expect(contrast(r.spec!.palette.text, dimmed)).toBeGreaterThanOrEqual(7);
+  });
+
   it("keeps only dock apps this TV has, each once, as many as the dock holds", () => {
     const installed = new Set(["com.netflix.ninja", "com.google.android.youtube.tv", "a.b.c", "d.e.f", "g.h.i", "j.k.l"]);
     const r = checkTheme(variant((s) => ((s.layout.dockSize = 4), (s.dockApps = ["com.netflix.ninja", "com.netflix.ninja", "com.made.up", "com.google.android.youtube.tv", "a.b.c", "d.e.f", "g.h.i"]))), installed);

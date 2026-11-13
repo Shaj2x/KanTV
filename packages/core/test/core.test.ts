@@ -85,6 +85,19 @@ describe("debloat run", () => {
     expect(cmds).not.toContain("pm enable com.vendor.telemetry");
   });
 
+  it("checks the names itself: a command, a core package or the remote service never reach the TV", async () => {
+    const shell = tv({});
+    const store = memoryStore();
+    for (const bad of ["x;reboot", "com.vendor.ads $(reboot)", "com.android.systemui"]) {
+      const r = await runDebloat(shell, store, { tvId: "t", listId: "l", packages: ["com.vendor.ads", bad] });
+      expect(r.ok).toBe(false);
+      expect(shell.state().disabled ?? []).toEqual([]);
+    }
+    expect(store.records.size).toBe(0);
+    const ok = await runDebloat(shell, store, { tvId: "t", listId: "l", packages: ["com.vendor.ads", "com.google.android.tv.remote.service"] });
+    expect(ok.ok && ok.plan.disable).not.toContain("com.google.android.tv.remote.service");
+  });
+
   it("stops with the TV untouched when the record cannot be stored", async () => {
     const shell = tv({});
     const store = memoryStore();

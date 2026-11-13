@@ -152,7 +152,8 @@ export function checkRecord(raw: unknown): RecoveryRecord {
   return { ...r, home: home ?? null, packages, settings: r.settings ?? {} };
 }
 
-const resolveHome = (stock: string) =>
+/** Makes the stock home screen the default again (shared by Restore and the handover's rollback). */
+export const resolveHome = (stock: string) =>
   `cmd package set-home-activity --user 0 $(cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME ${stock} | tail -n 1)`;
 
 /**

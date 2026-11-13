@@ -57,15 +57,24 @@ export function checkTheme(input: unknown, installed: ReadonlySet<string> | null
   }
 
   // Text has to read on the background and on every wallpaper colour it may sit over (after the dim).
-  const grounds = [p.background, ...wallpaperBase(spec)];
-  const worst = (c: string) => Math.min(...grounds.map((g) => contrast(c, g)));
-  if (worst(p.text) < MIN_TEXT_CONTRAST) {
-    if (spec.wallpaper.kind !== "none" && spec.wallpaper.kind !== "sky" && spec.wallpaper.dim < 60 && contrast(p.text, p.background) >= MIN_TEXT_CONTRAST) {
-      spec.wallpaper.dim = Math.max(spec.wallpaper.dim, 45);
+  // The launcher lays black at `dim` percent over the wallpaper, so that is the colour the text really sits on.
+  const dimmed = (g: string, dim: number) =>
+    "#" + parseHex(g).map((v) => Math.round(v * (1 - dim / 100)).toString(16).padStart(2, "0")).join("");
+  const worstAt = (c: string, dim: number) => Math.min(contrast(c, p.background), ...wallpaperBase(spec).map((g) => contrast(c, dimmed(g, dim))));
+  if (worstAt(p.text, spec.wallpaper.dim) < MIN_TEXT_CONTRAST) {
+    const canDim = spec.wallpaper.kind !== "none" && spec.wallpaper.kind !== "sky" && contrast(p.text, p.background) >= MIN_TEXT_CONTRAST;
+    // The least extra dim that makes the text read everywhere, up to 85%: the design keeps its text colour.
+    const need = canDim ? [50, 55, 60, 65, 70, 75, 80, 85].find((d) => d > spec.wallpaper.dim && worstAt(p.text, d) >= MIN_TEXT_CONTRAST) : undefined;
+    if (need !== undefined) {
+      spec.wallpaper.dim = need;
       fixes.push("Darkened the wallpaper so the clock stays readable");
     } else {
       p.text = readableOn(p.background);
       fixes.push("Made the text white or black so it reads from the sofa");
+      // Still not readable over a light wallpaper: dim it as far as it takes.
+      if (worstAt(p.text, spec.wallpaper.dim) < MIN_TEXT_CONTRAST && spec.wallpaper.kind !== "none" && spec.wallpaper.kind !== "sky") {
+        spec.wallpaper.dim = Math.max(spec.wallpaper.dim, [50, 60, 70, 80, 90].find((d) => worstAt(p.text, d) >= MIN_TEXT_CONTRAST) ?? 90);
+      }
     }
   }
   if (contrast(p.textMuted, p.background) < MIN_MUTED_CONTRAST) {
