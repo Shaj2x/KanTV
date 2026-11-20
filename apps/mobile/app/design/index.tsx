@@ -165,9 +165,9 @@ export default function DesignStudio() {
         <View style={{ gap: space(3) }}>
           {applied !== null ? (
             <Card tone="ok">
-              <Text style={[type.heading, { color: color.ok }]}>{platform.mode === "demo" ? "Ready for your TV" : "On your TV"}</Text>
+              <Text style={[type.heading, { color: color.ok }]}>{!platform.designer.live ? "Ready for your TV" : "On your TV"}</Text>
               <Text style={type.small}>
-                {platform.mode === "demo"
+                {!platform.designer.live
                   ? `Preview: ${applied} settings for this design are ready to send to the KanTV home screen on your TV, once it's installed.`
                   : "Sent to your TV. It changes the next time you press Home."}
               </Text>

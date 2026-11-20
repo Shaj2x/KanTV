@@ -48,7 +48,7 @@ export default function Paywall() {
           <Button label={`Subscribe ${pick === "monthly" ? "monthly" : "yearly"}`} busy={busy} onPress={buy} />
           <Button kind="ghost" label="Restore purchases" onPress={restore} />
           <Text style={[type.tiny, { textAlign: "center" }]}>
-            Restore my TV is always free.{platform.mode === "demo" ? " Preview: example prices, nothing is charged." : ""}
+            Restore my TV is always free.{!platform.designer.live ? " Preview: example prices, nothing is charged." : ""}
           </Text>
         </>
       }

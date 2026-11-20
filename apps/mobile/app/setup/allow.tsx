@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { platform } from "../../src/platform";
+import { viaConnect } from "../../src/platform/bridge";
 import { demoTapAllow } from "../../src/platform/demo";
 import { useSession } from "../../src/session";
 import { color, space, type } from "../../src/theme";
@@ -70,7 +71,9 @@ export default function Allow() {
       title={phase === "prompt" ? "Look at your TV" : phase === "reading" ? "Connected" : "Connecting to your TV"}
       subtitle={
         phase === "prompt"
-          ? "It's asking whether to allow this phone. Tick “Always allow from this computer”, then choose Allow."
+          ? viaConnect
+            ? "It's asking whether to allow KanTV Connect on your computer. Tick “Always allow from this computer”, then choose Allow."
+            : "It's asking whether to allow this phone. Tick “Always allow from this computer”, then choose Allow."
           : phase === "reading"
             ? "Finding out which TV this is…"
             : `Reaching ${session.tv?.name ?? "the TV"}…`
@@ -84,14 +87,14 @@ export default function Allow() {
       <TvPicture
         dialog={
           phase === "prompt"
-            ? { title: "Allow USB debugging?", body: "The computer's RSA key fingerprint is: KanTV on this phone", check: "Always allow from this computer", buttons: ["Cancel", "Allow"] }
+            ? { title: "Allow USB debugging?", body: `The computer's RSA key fingerprint is: ${viaConnect ? "KanTV Connect" : "KanTV on this phone"}`, check: "Always allow from this computer", buttons: ["Cancel", "Allow"] }
             : undefined
         }
         items={phase === "prompt" ? undefined : [{ label: "Home" }, { label: "Apps" }, { label: "Settings" }]}
       />
       <Card>
         <Status state={phase === "connecting" ? "doing" : "done"} label="Reach the TV" />
-        <Status state={phase === "prompt" ? "doing" : phase === "reading" ? "done" : "todo"} label="Allow this phone on the TV" detail={phase === "prompt" ? "Waiting for you to choose Allow" : undefined} />
+        <Status state={phase === "prompt" ? "doing" : phase === "reading" ? "done" : "todo"} label={viaConnect ? "Allow KanTV Connect on the TV" : "Allow this phone on the TV"} detail={phase === "prompt" ? "Waiting for you to choose Allow" : undefined} />
         <Status state={phase === "reading" ? "doing" : "todo"} label="Identify the TV" />
       </Card>
       {phase === "prompt" ? (

@@ -1,0 +1,76 @@
+name: KanTV Connect (downloads)
+
+# Builds KanTV Connect for Windows, Mac and Linux, each one file with the app inside, and publishes them on
+# the "connect" release: https://github.com/<owner>/<repo>/releases/tag/connect. The website's connect page
+# links to these files.
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/connect/**", "apps/mobile/**", "packages/core/**", ".github/workflows/connect.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: connect
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            file: kantv-connect-windows.exe
+          - os: macos-latest
+            file: kantv-connect-mac-apple-silicon.zip
+          - os: macos-15-intel
+            file: kantv-connect-mac-intel.zip
+          - os: ubuntu-latest
+            file: kantv-connect-linux.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test the helper
+        run: npx vitest run apps/connect
+      - name: Build the program
+        run: node apps/connect/build.mjs
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p out
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp apps/connect/dist/kantv-connect.exe "out/${{ matrix.file }}"
+          else
+            # Zipped so the file stays runnable after downloading.
+            cd apps/connect/dist && zip -9 "../../../out/${{ matrix.file }}" kantv-connect
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}
+          path: out/${{ matrix.file }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish on the "connect" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release view connect >/dev/null 2>&1 || gh release create connect --title "KanTV Connect" \
+            --notes "Run this on a computer on the same Wi-Fi as your TV, then scan the QR code it shows with your iPhone. Instructions: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/connect.html"
+          gh release upload connect out/* --clobber

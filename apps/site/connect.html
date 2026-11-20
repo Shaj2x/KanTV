@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KanTV Connect</title>
+<meta name="description" content="Use KanTV on your iPhone with your real TV: run KanTV Connect on a computer on the same Wi-Fi and scan its QR code.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#fff; --surface:#f3f3f3; --ink:#232323; --muted:#686868; --line:#e6e6e6; --mint:#a1ffcb; --font:"Familjen Grotesk", system-ui, sans-serif; --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.55 var(--font); }
+  a { color:inherit; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 16px; }
+  header { padding:22px 0; }
+  .logo { display:inline-flex; align-items:center; gap:10px; font-weight:500; font-size:19px; text-decoration:none; letter-spacing:-0.01em; }
+  .mark { display:flex; flex-direction:column; gap:3px; width:22px; }
+  .mark i { display:block; height:5px; border-radius:3px; background:var(--ink); }
+  .hero { padding:48px 0 32px; }
+  .eyebrow { font:500 13px/1 var(--mono); text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:0 0 18px; }
+  h1 { font-weight:400; font-size:clamp(38px, 7vw, 60px); line-height:1.02; letter-spacing:-0.04em; margin:0 0 20px; }
+  .lead { font-size:19px; color:var(--muted); max-width:34em; margin:0; }
+  .need { display:flex; flex-wrap:wrap; gap:8px; margin:28px 0 0; padding:0; list-style:none; }
+  .need li { background:var(--surface); border-radius:999px; padding:7px 14px; font-size:15px; }
+  ol.steps { list-style:none; padding:0; margin:24px 0 0; counter-reset:s; }
+  ol.steps > li { counter-increment:s; display:grid; grid-template-columns:40px 1fr; gap:16px; padding:28px 0; border-top:1px solid var(--line); }
+  ol.steps > li::before { content:counter(s); width:32px; height:32px; border-radius:16px; background:var(--mint); display:grid; place-items:center; font-weight:600; font-size:15px; }
+  h2 { font-weight:500; font-size:24px; letter-spacing:-0.02em; line-height:1.2; margin:2px 0 8px; }
+  p { margin:0 0 10px; }
+  .muted { color:var(--muted); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:0 24px; border-radius:14px; background:var(--ink); color:#fff; text-decoration:none; font-weight:500; font-size:17px; transition:transform 120ms ease-out; }
+  .btn:active { transform:scale(0.97); }
+  .others { margin-top:12px; font-size:15px; color:var(--muted); }
+  .others a { margin-right:14px; }
+  .note { background:var(--surface); border-radius:14px; padding:14px 16px; margin-top:12px; font-size:15px; }
+  .note b { font-weight:600; }
+  .os { display:none; }
+  .os.on { display:block; }
+  code { font:15px var(--mono); background:var(--surface); border-radius:6px; padding:1px 6px; }
+  details { border-top:1px solid var(--line); padding:18px 0; }
+  details:last-of-type { border-bottom:1px solid var(--line); }
+  summary { cursor:pointer; font-weight:500; font-size:18px; list-style:none; display:flex; justify-content:space-between; gap:16px; }
+  summary::after { content:"+"; color:var(--muted); }
+  details[open] summary::after { content:"–"; }
+  details p { margin-top:10px; color:var(--muted); }
+  section.help { padding:40px 0 64px; }
+  section.help h3 { font-weight:500; font-size:28px; letter-spacing:-0.02em; margin:0 0 12px; }
+  footer { padding:28px 0 48px; color:var(--muted); font-size:14px; border-top:1px solid var(--line); }
+  @media (prefers-reduced-motion: reduce) { .btn { transition:none; } }
+</style>
+</head>
+<body>
+<header class="wrap"><a class="logo" href="./"><span class="mark" aria-hidden="true"><i style="width:100%"></i><i style="width:70%"></i><i style="width:40%"></i></span>KanTV</a></header>
+
+<main class="wrap">
+  <section class="hero">
+    <p class="eyebrow">Early test</p>
+    <h1>KanTV on your iPhone, with your real TV</h1>
+    <p class="lead">An iPhone's browser can't talk to a TV by itself, so a small program on your computer does it. Run it, scan its QR code, and KanTV opens in Safari connected to your TV.</p>
+    <ul class="need" aria-label="What you need">
+      <li>A Windows PC or a Mac</li>
+      <li>An iPhone</li>
+      <li>A Google TV or Android TV</li>
+      <li>All three on the same Wi-Fi</li>
+    </ul>
+  </section>
+
+  <ol class="steps">
+    <li>
+      <div>
+        <h2>Download KanTV Connect</h2>
+        <p class="muted">One file, nothing to install.</p>
+        <a class="btn" id="download" href="#">Download</a>
+        <div class="others" id="others"></div>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h2>Open it</h2>
+        <div class="os" data-os="windows">
+          <p>Double-click <code>kantv-connect-windows.exe</code>.</p>
+          <div class="note">If Windows says <b>“Windows protected your PC”</b>: choose <b>More info</b>, then <b>Run anyway</b>. When it asks about network access, tick <b>Private networks</b> and choose <b>Allow</b>.</div>
+        </div>
+        <div class="os" data-os="mac">
+          <p>Open the downloaded zip, then double-click <code>kantv-connect</code>. A Terminal window opens; that's it running.</p>
+          <div class="note">If macOS says it <b>can't be opened</b>: open <b>System Settings → Privacy &amp; Security</b>, scroll down and choose <b>Open Anyway</b>, then open it again. If it asks to accept incoming network connections, choose <b>Allow</b>.</div>
+        </div>
+        <div class="os" data-os="linux">
+          <p>Unzip it and run <code>./kantv-connect</code> in a terminal.</p>
+        </div>
+        <p class="muted" style="margin-top:12px">A page with a QR code opens on the computer. Keep the program running while you use KanTV.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h2>Scan the QR code with your iPhone</h2>
+        <p class="muted">Open the Camera, point it at the code on the computer's screen and tap the link. KanTV opens in Safari. You can add it to your Home Screen from the Share menu.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h2>Tap “Set up my TV”</h2>
+        <p class="muted">KanTV walks you through switching on developer options on the TV. When the TV asks <b>“Allow USB debugging?”</b>, tick <b>Always allow from this computer</b> and choose <b>Allow</b>.</p>
+        <p class="muted">Nothing is uninstalled. <b>Restore my TV</b> in the app puts everything back, any time, for free.</p>
+      </div>
+    </li>
+  </ol>
+
+  <section class="help">
+    <h3>If something doesn't work</h3>
+    <details><summary>The QR code link doesn't open on the iPhone</summary><p>The iPhone must be on the same Wi-Fi as the computer, not on mobile data or a guest network. You can also type the link shown under the QR code into Safari, including the part after <code>?key=</code>.</p></details>
+    <details><summary>KanTV can't find the TV</summary><p>Tap “My TV isn't showing up” and type the TV's IP address (on the TV: Settings → Network &amp; Internet → your network). Some routers keep devices apart on guest or “isolated” networks; use the main Wi-Fi.</p></details>
+    <details><summary>“This TV needs a pairing code”</summary><p>Some newer TVs only offer <b>Wireless debugging</b> with a pairing code. This early version connects to TVs with <b>USB debugging</b> or <b>Network debugging</b>; pairing-code support is coming.</p></details>
+    <details><summary>“The TV didn't answer”</summary><p>Check that USB debugging (or Network debugging) is on in the TV's Developer options, that the TV is awake, and that KanTV Connect is still running on the computer. Then tap Try again.</p></details>
+    <details><summary>Is it safe?</summary><p>KanTV Connect only listens on your home network, and only a phone that opened its link (with its key) can use it. The TV asks you to allow it once. When setup finishes, KanTV switches debugging off again, so nothing can reach the TV that way afterwards.</p></details>
+  </section>
+</main>
+
+<footer class="wrap">KanTV · Built on cleanyourtv (MIT)</footer>
+
+<script>
+  // The downloads live on the GitHub release named "connect" of the repository this site is published from.
+  (function () {
+    var owner = location.hostname.endsWith(".github.io") ? location.hostname.split(".")[0] : "Shaj2x";
+    var repo = location.hostname.endsWith(".github.io") ? (location.pathname.split("/")[1] || "kantv") : "kantv";
+    var base = "https://github.com/" + owner + "/" + repo + "/releases/download/connect/";
+    var files = {
+      windows: ["Windows", "kantv-connect-windows.exe"],
+      macArm: ["Mac with Apple chip", "kantv-connect-mac-apple-silicon.zip"],
+      macIntel: ["Mac with Intel chip", "kantv-connect-mac-intel.zip"],
+      linux: ["Linux", "kantv-connect-linux.zip"],
+    };
+    var ua = navigator.userAgent, pick = "windows", os = "windows";
+    if (/Mac/.test(ua) && !/iPhone|iPad/.test(ua)) { pick = "macArm"; os = "mac"; }
+    else if (/Linux/.test(ua) && !/Android/.test(ua)) { pick = "linux"; os = "linux"; }
+    var btn = document.getElementById("download");
+    btn.href = base + files[pick][1];
+    btn.textContent = "Download for " + files[pick][0];
+    var others = document.getElementById("others");
+    others.innerHTML = "Also for: " + Object.keys(files).filter(function (k) { return k !== pick; })
+      .map(function (k) { return '<a href="' + base + files[k][1] + '">' + files[k][0] + "</a>"; }).join("");
+    if (/iPhone|iPad|Android/.test(ua)) {
+      others.insertAdjacentHTML("afterbegin", "<p style='margin:0 0 8px;color:#232323'>Open this page on your computer to download it.</p>");
+    }
+    document.querySelectorAll(".os").forEach(function (el) { el.classList.toggle("on", el.dataset.os === os); });
+  })();
+</script>
+</body>
+</html>

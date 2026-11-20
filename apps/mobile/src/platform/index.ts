@@ -4,13 +4,14 @@
 // backend whenever the build is configured for it (see src/auth.tsx).
 import { backendAccount, backendDesigner } from "../api";
 import { accessToken, apiUrl, live } from "../auth";
+import { bridgePlatform, viaConnect } from "./bridge";
 import { demoPlatform } from "./demo";
 import { liveFeed } from "./live";
 import type { Platform } from "./types";
 
 const feed = live ? liveFeed(apiUrl) : null;
 
-export const platform: Platform = live
+const base: Platform = live
   ? {
       ...demoPlatform,
       designer: backendDesigner(apiUrl!, accessToken),
@@ -19,4 +20,7 @@ export const platform: Platform = live
       ...(feed ? { feed } : {}),
     }
   : demoPlatform;
+
+// Served by KanTV Connect: the TV is real, reached through the computer running it.
+export const platform: Platform = viaConnect ? { ...base, ...bridgePlatform() } : base;
 export type * from "./types";

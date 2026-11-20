@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { platform, type FoundTv } from "../../src/platform";
+import { viaConnect } from "../../src/platform/bridge";
 import { useSession } from "../../src/session";
 import { color, radius, space, type } from "../../src/theme";
 import { Button, Card, Screen, Cursor, Row } from "../../src/ui/kit";
@@ -16,7 +17,7 @@ export default function Find() {
   const [manual, setManual] = useState(false);
   const [address, setAddress] = useState("");
 
-  useEffect(() => platform.discover((tv) => setFound((f) => (f.some((x) => x.id === tv.id) ? f : [...f, tv]))), []);
+  useEffect(() => platform.discover((tv) => setFound((f) => (f.some((x) => x.id === tv.id) ? f.map((x) => (x.id === tv.id ? tv : x)) : [...f, tv]))), []);
 
   const pick = (tv: FoundTv) => {
     set({ tv });
@@ -24,7 +25,7 @@ export default function Find() {
   };
 
   return (
-    <Screen step="Step 2 of 5" title="Looking for your TV" subtitle="Your phone and the TV need to be on the same Wi-Fi.">
+    <Screen step="Step 2 of 5" title="Looking for your TV" subtitle={viaConnect ? "The computer running KanTV Connect and the TV need to be on the same Wi-Fi." : "Your phone and the TV need to be on the same Wi-Fi."}>
       <View style={{ gap: space(3) }}>
         {found.map((tv) => (
           <Row key={tv.id} title={tv.name} detail={`Found on your Wi-Fi at ${tv.host}`} onPress={() => pick(tv)} last />
